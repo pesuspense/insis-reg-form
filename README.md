@@ -22,13 +22,13 @@ INSIS Contact&Meeting Registration Form은 연락 및 만남 등록을 위한 �
 ### Backend
 - Node.js
 - Express.js
-- MongoDB (데이터베이스)
-- Mongoose (MongoDB ODM)
+- PostgreSQL (데이터베이스)
+- pg (PostgreSQL 클라이언트)
 - CORS (Cross-Origin Resource Sharing)
 
 ### 배포
 - Vercel (프론트엔드 및 백엔드)
-- MongoDB Atlas (클라우드 데이터베이스)
+- Supabase (PostgreSQL 클라우드 데이터베이스)
 
 ## 설치 및 실행
 
@@ -45,12 +45,13 @@ INSIS Contact&Meeting Registration Form은 연락 및 만남 등록을 위한 �
    npm run install-all
    ```
 
-3. **MongoDB 설정**
-   - MongoDB Atlas에서 무료 클러스터 생성
-   - 데이터베이스 연결 문자열 복사
+3. **Supabase 설정**
+   - Supabase에서 프로젝트 생성
+   - 데이터베이스 테이블 생성 (SQL Editor에서 실행)
+   - 연결 문자열 복사
    - `server/.env` 파일 생성:
      ```
-     MONGODB_URI=your_mongodb_atlas_connection_string
+     DATABASE_URL=your_supabase_connection_string
      ```
 
 4. **개발 서버 실행**
@@ -65,16 +66,15 @@ INSIS Contact&Meeting Registration Form은 연락 및 만남 등록을 위한 �
    npm i -g vercel
    ```
 
-2. **MongoDB Atlas 설정**
-   - MongoDB Atlas에서 클러스터 생성
-   - 데이터베이스 사용자 생성
-   - 네트워크 액세스 설정 (0.0.0.0/0)
+2. **Supabase 설정**
+   - Supabase에서 프로젝트 생성
+   - 데이터베이스 테이블 생성 (SQL Editor에서 실행)
    - 연결 문자열 복사
 
 3. **Vercel 환경 변수 설정**
    ```bash
-   vercel env add MONGODB_URI
-   # MongoDB Atlas 연결 문자열 입력
+   vercel env add DATABASE_URL
+   # Supabase 연결 문자열 입력
    ```
 
 4. **배포**
@@ -186,10 +186,10 @@ GET /api/registrations?sortBy=createdAt&sortOrder=desc
 ## 환경 변수
 
 ### 개발 환경
-- `MONGODB_URI`: MongoDB 연결 문자열
+- `DATABASE_URL`: Supabase PostgreSQL 연결 문자열
 
 ### 프로덕션 환경 (Vercel)
-- `MONGODB_URI`: MongoDB Atlas 연결 문자열
+- `DATABASE_URL`: Supabase PostgreSQL 연결 문자열
 
 ## 라이선스
 

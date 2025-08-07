@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
+const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
@@ -12,57 +12,20 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// MongoDB 연결
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/insis-reg-form';
-
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('MongoDB에 연결되었습니다.');
-})
-.catch((err) => {
-  console.error('MongoDB 연결 오류:', err.message);
+// PostgreSQL 연결
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/insis-reg-form',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Registration 스키마 정의
-const registrationSchema = new mongoose.Schema({
-  fullName: {
-    type: String,
-    required: true
-  },
-  isNewUser: {
-    type: Boolean,
-    required: true
-  },
-  gender: String,
-  phone: String,
-  email: String,
-  position: String,
-  organization: String,
-  contactDate: {
-    type: String,
-    required: true
-  },
-  contactMethod: {
-    type: String,
-    required: true
-  },
-  contactSubMethod: {
-    type: String,
-    required: true
-  },
-  contactContent: String,
-  isRegistered: {
-    type: Boolean,
-    default: false
+// 데이터베이스 연결 테스트
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('PostgreSQL 연결 오류:', err.message);
+  } else {
+    console.log('PostgreSQL에 연결되었습니다.');
   }
-}, {
-  timestamps: true
 });
-
-const Registration = mongoose.model('Registration', registrationSchema);
 
 // 등록 데이터 저장 API
 app.post('/api/registrations', async (req, res) => {
@@ -77,22 +40,30 @@ app.post('/api/registrations', async (req, res) => {
       // 이름과 성을 합쳐서 fullName 생성
       const fullName = `${registration.firstName} ${registration.lastName}`.trim();
       
-      const newRegistration = new Registration({
-        fullName,
-        isNewUser: registration.isNewUser,
-        gender: registration.gender || null,
-        phone: registration.phone || null,
-        email: registration.email || null,
-        position: registration.position || null,
-        organization: registration.organization || null,
-        contactDate: registration.contactDate,
-        contactMethod: registration.contactMethod,
-        contactSubMethod: registration.contactSubMethod,
-        contactContent: registration.contactContent || null,
-        isRegistered: false
-      });
+      const query = `
+        INSERT INTO registrations 
+        (full_name, is_new_user, gender, phone, email, position, organization, 
+         contact_date, contact_method, contact_sub_method, contact_content, is_registered)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id
+      `;
       
-      return newRegistration.save();
+      const values = [
+        fullName,
+        registration.isNewUser,
+        registration.gender || null,
+        registration.phone || null,
+        registration.email || null,
+        registration.position || null,
+        registration.organization || null,
+        registration.contactDate,
+        registration.contactMethod,
+        registration.contactSubMethod,
+        registration.contactContent || null,
+        false
+      ];
+      
+      return pool.query(query, values);
     });
 
     await Promise.all(insertPromises);
@@ -106,28 +77,29 @@ app.post('/api/registrations', async (req, res) => {
 // 등록 데이터 조회 API
 app.get('/api/registrations', async (req, res) => {
   try {
-    const { sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const { sortBy = 'created_at', sortOrder = 'desc' } = req.query;
     
-    let sortObject = {};
+    let orderBy = 'created_at';
     switch (sortBy) {
       case 'fullName':
-        sortObject.fullName = sortOrder === 'asc' ? 1 : -1;
+        orderBy = 'full_name';
         break;
       case 'contactDate':
-        sortObject.contactDate = sortOrder === 'asc' ? 1 : -1;
+        orderBy = 'contact_date';
         break;
       case 'contactMethod':
-        sortObject.contactMethod = sortOrder === 'asc' ? 1 : -1;
+        orderBy = 'contact_method';
         break;
       case 'isRegistered':
-        sortObject.isRegistered = sortOrder === 'asc' ? 1 : -1;
+        orderBy = 'is_registered';
         break;
       default:
-        sortObject.createdAt = sortOrder === 'asc' ? 1 : -1;
+        orderBy = 'created_at';
     }
     
-    const registrations = await Registration.find().sort(sortObject);
-    res.json(registrations);
+    const query = `SELECT * FROM registrations ORDER BY ${orderBy} ${sortOrder.toUpperCase()}`;
+    const result = await pool.query(query);
+    res.json(result.rows);
   } catch (error) {
     console.error('데이터 조회 오류:', error);
     res.status(500).json({ error: '데이터 조회 중 오류가 발생했습니다.' });
@@ -140,13 +112,34 @@ app.put('/api/registrations/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     
-    const updatedRegistration = await Registration.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const query = `
+      UPDATE registrations SET 
+      full_name = $1, is_new_user = $2, gender = $3, phone = $4, email = $5,
+      position = $6, organization = $7, contact_date = $8, contact_method = $9,
+      contact_sub_method = $10, contact_content = $11, is_registered = $12
+      WHERE id = $13
+      RETURNING *
+    `;
     
-    if (!updatedRegistration) {
+    const values = [
+      updateData.fullName,
+      updateData.isNewUser,
+      updateData.gender,
+      updateData.phone,
+      updateData.email,
+      updateData.position,
+      updateData.organization,
+      updateData.contactDate,
+      updateData.contactMethod,
+      updateData.contactSubMethod,
+      updateData.contactContent,
+      updateData.isRegistered,
+      id
+    ];
+    
+    const result = await pool.query(query, values);
+    
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: '등록 항목을 찾을 수 없습니다.' });
     }
     
@@ -163,13 +156,15 @@ app.patch('/api/registrations/:id/register', async (req, res) => {
     const { id } = req.params;
     const { isRegistered } = req.body;
     
-    const updatedRegistration = await Registration.findByIdAndUpdate(
-      id,
-      { isRegistered },
-      { new: true }
-    );
+    const query = `
+      UPDATE registrations SET is_registered = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `;
     
-    if (!updatedRegistration) {
+    const result = await pool.query(query, [isRegistered, id]);
+    
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: '등록 항목을 찾을 수 없습니다.' });
     }
     
@@ -185,10 +180,10 @@ app.listen(PORT, () => {
   console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
 });
 
-// 프로세스 종료 시 MongoDB 연결 종료
+// 프로세스 종료 시 PostgreSQL 연결 종료
 process.on('SIGINT', () => {
-  mongoose.connection.close(() => {
-    console.log('MongoDB 연결이 종료되었습니다.');
+  pool.end(() => {
+    console.log('PostgreSQL 연결이 종료되었습니다.');
     process.exit(0);
   });
 });
