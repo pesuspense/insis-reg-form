@@ -18,24 +18,25 @@ const AdminPage = () => {
   const [contentModal, setContentModal] = useState({ open: false, text: '', title: '' });
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedMonthWeek, setSelectedMonthWeek] = useState('');
+  const [selectedContactMethod, setSelectedContactMethod] = useState('');
   const [monthWeekOptions, setMonthWeekOptions] = useState([]);
 
   const countries = [
     { code: '', name: '전체' },
-    { code: 'MN', name: '몽골' },
-    { code: 'DE', name: '베를린' },
-    { code: 'RO', name: '루마니아' },
-    { code: 'AZ', name: '아제르바이잔' }
+    { code: 'MN', name: '몽골(MN)' },
+    { code: 'DE', name: '베를린(DE)' },
+    { code: 'RO', name: '루마니아(RO)' },
+    { code: 'AZ', name: '아제르바이잔(AZ)' }
   ];
 
-  // contactDate(ISO)로부터 "n월 m주차" 라벨 계산
+  // contactDate(ISO)로부터 "n-m" 라벨 계산
   const computeMonthWeekLabel = (dateString) => {
     try {
       const d = parseISO(dateString);
       const month = d.getMonth() + 1;
       const day = d.getDate();
       const week = Math.floor((day - 1) / 7) + 1;
-      return `${month}월 ${week}주차`;
+      return `${month}-${week}`;
     } catch (e) {
       return '';
     }
@@ -48,7 +49,8 @@ const AdminPage = () => {
         sortBy,
         sortOrder,
         ...(selectedCountry && { country: selectedCountry }),
-        ...(selectedMonthWeek && { monthWeek: selectedMonthWeek })
+        ...(selectedMonthWeek && { monthWeek: selectedMonthWeek }),
+        ...(selectedContactMethod && { contactMethod: selectedContactMethod })
       });
       
       const response = await axios.get(`${API_BASE_URL}/registrations?${params}`);
@@ -244,7 +246,7 @@ const AdminPage = () => {
 
   useEffect(() => {
     loadRegistrations();
-  }, [sortBy, sortOrder, selectedCountry, selectedMonthWeek]);
+  }, [sortBy, sortOrder, selectedCountry, selectedMonthWeek, selectedContactMethod]);
 
   const SortableHeader = ({ children, field }) => (
     <th onClick={() => handleSort(field)} style={{ cursor: 'pointer' }}>
@@ -299,6 +301,16 @@ const AdminPage = () => {
                 {option}
               </option>
             ))}
+          </select>
+
+          <select 
+            value={selectedContactMethod} 
+            onChange={(e) => setSelectedContactMethod(e.target.value)}
+            className="filter-select"
+          >
+            <option value="">전체 연락방법</option>
+            <option value="연락">연락 (Contact)</option>
+            <option value="만남">만남 (Meeting)</option>
           </select>
         </div>
 

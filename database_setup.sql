@@ -1,5 +1,8 @@
--- registrations 테이블 생성
-CREATE TABLE IF NOT EXISTS registrations (
+-- 기존 테이블 삭제 (모든 데이터와 구조 제거)
+DROP TABLE IF EXISTS registrations CASCADE;
+
+-- registrations 테이블 새로 생성
+CREATE TABLE registrations (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
     is_new_user BOOLEAN NOT NULL,
@@ -11,8 +14,6 @@ CREATE TABLE IF NOT EXISTS registrations (
     contact_date DATE NOT NULL,
     contact_method VARCHAR(50) NOT NULL,
     contact_sub_method VARCHAR(50),
-    contact_method_en VARCHAR(100),
-    contact_sub_method_en VARCHAR(100),
     contact_content TEXT,
     country VARCHAR(10) DEFAULT 'MN',
     is_registered BOOLEAN DEFAULT FALSE,
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS registrations (
 
 -- 국가 코드에 대한 제약 조건 추가
 ALTER TABLE registrations
-  ADD CONSTRAINT IF NOT EXISTS check_country_code
+  ADD CONSTRAINT check_country_code
   CHECK (country IN ('MN', 'DE', 'RO', 'AZ'));
 
 -- updated_at 자동 업데이트를 위한 트리거 함수
@@ -35,39 +36,21 @@ END;
 $$ language 'plpgsql';
 
 -- 트리거 생성
-DROP TRIGGER IF EXISTS update_registrations_updated_at ON registrations;
 CREATE TRIGGER update_registrations_updated_at
     BEFORE UPDATE ON registrations
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-SELECT 'registrations 테이블이 성공적으로 생성되었습니다.' as message;
-
--- 월/주차 파생 컬럼 추가 (이미 존재 시 건너뜀)
+-- 월/주차 파생 컬럼 추가
 ALTER TABLE registrations
-  ADD COLUMN IF NOT EXISTS month_num integer GENERATED ALWAYS AS (extract(month from contact_date)::int) STORED;
+  ADD COLUMN month_num integer GENERATED ALWAYS AS (extract(month from contact_date)::int) STORED;
 
 ALTER TABLE registrations
-  ADD COLUMN IF NOT EXISTS week_of_month integer GENERATED ALWAYS AS (((extract(day from contact_date)::int - 1) / 7) + 1) STORED;
+  ADD COLUMN week_of_month integer GENERATED ALWAYS AS (((extract(day from contact_date)::int - 1) / 7) + 1) STORED;
 
 ALTER TABLE registrations
-  ADD COLUMN IF NOT EXISTS month_week_label text GENERATED ALWAYS AS (
-    concat(extract(month from contact_date)::int, '월 ', (((extract(day from contact_date)::int - 1) / 7) + 1), '주차')
+  ADD COLUMN month_week_label text GENERATED ALWAYS AS (
+    (extract(month from contact_date)::int)::text || '-' || (((extract(day from contact_date)::int - 1) / 7) + 1)::text
   ) STORED;
 
--- 국가 컬럼 추가
-ALTER TABLE registrations
-  ADD COLUMN IF NOT EXISTS country VARCHAR(10) DEFAULT 'MN';
-
--- 국가 코드에 대한 제약 조건 추가
-ALTER TABLE registrations
-  ADD CONSTRAINT IF NOT EXISTS check_country_code
-  CHECK (country IN ('MN', 'DE', 'RO', 'AZ'));
-
--- 기존 데이터 삭제
-DELETE FROM registrations;
-
--- 시퀀스 리셋 (새로운 ID부터 시작)
-ALTER SEQUENCE registrations_id_seq RESTART WITH 1;
-
-SELECT '기존 데이터가 삭제되었습니다.' as message;
+SELECT 'registrations 테이블이 성공적으로 생성되었습니다.' as message;

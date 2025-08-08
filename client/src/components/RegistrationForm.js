@@ -25,10 +25,10 @@ const RegistrationForm = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const countries = [
-    { code: 'MN', name: '몽골' },
-    { code: 'DE', name: '베를린' },
-    { code: 'RO', name: '루마니아' },
-    { code: 'AZ', name: '아제르바이잔' }
+    { code: 'MN', name: '몽골(MN)' },
+    { code: 'DE', name: '베를린(DE)' },
+    { code: 'RO', name: '루마니아(RO)' },
+    { code: 'AZ', name: '아제르바이잔(AZ)' }
   ];
 
   // 연락방법별 카운트 계산

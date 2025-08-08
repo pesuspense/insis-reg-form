@@ -94,9 +94,9 @@ module.exports = async function handler(req, res) {
 // GET: 등록 데이터 조회
 async function handleGet(req, res) {
   try {
-    const { sortBy = 'created_at', sortOrder = 'desc', country, monthWeek } = req.query;
+    const { sortBy = 'created_at', sortOrder = 'desc', country, monthWeek, contactMethod } = req.query;
     
-    console.log('GET 요청 파라미터:', { sortBy, sortOrder, country, monthWeek });
+    console.log('GET 요청 파라미터:', { sortBy, sortOrder, country, monthWeek, contactMethod });
     
     let orderBy = 'created_at';
     switch (sortBy) {
@@ -157,6 +157,12 @@ async function handleGet(req, res) {
     if (monthWeek) {
       whereConditions.push(`month_week_label = $${paramIndex}`);
       queryParams.push(monthWeek);
+      paramIndex++;
+    }
+
+    if (contactMethod) {
+      whereConditions.push(`contact_method = $${paramIndex}`);
+      queryParams.push(contactMethod);
       paramIndex++;
     }
     
