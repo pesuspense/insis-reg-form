@@ -50,25 +50,13 @@ ALTER TABLE registrations
   ADD COLUMN week_of_month integer GENERATED ALWAYS AS (
     CASE
       WHEN extract(day from contact_date) + 
-           (CASE 
-             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-           END) <= 7 THEN 1
+           ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 7 THEN 1
       WHEN extract(day from contact_date) + 
-           (CASE 
-             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-           END) <= 14 THEN 2
+           ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 14 THEN 2
       WHEN extract(day from contact_date) + 
-           (CASE 
-             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-           END) <= 21 THEN 3
+           ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 21 THEN 3
       WHEN extract(day from contact_date) + 
-           (CASE 
-             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-           END) <= 28 THEN 4
+           ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 28 THEN 4
       ELSE 5
     END
   ) STORED;
@@ -79,25 +67,13 @@ ALTER TABLE registrations
     (extract(month from contact_date)::int)::text || '-' || (
       CASE
         WHEN extract(day from contact_date) + 
-             (CASE 
-               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-             END) <= 7 THEN 1
+             ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 7 THEN 1
         WHEN extract(day from contact_date) + 
-             (CASE 
-               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-             END) <= 14 THEN 2
+             ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 14 THEN 2
         WHEN extract(day from contact_date) + 
-             (CASE 
-               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-             END) <= 21 THEN 3
+             ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 21 THEN 3
         WHEN extract(day from contact_date) + 
-             (CASE 
-               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
-               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
-             END) <= 28 THEN 4
+             ((extract(dow from contact_date - extract(day from contact_date)::int + 1) + 6) % 7) <= 28 THEN 4
         ELSE 5
       END
     )::text

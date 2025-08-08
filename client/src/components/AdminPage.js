@@ -53,8 +53,7 @@ const AdminPage = () => {
     const firstDayWeekday = firstDay.getDay();
 
     // 주 시작을 월요일로 보정 (ISO 기준)
-    // 일요일(0)은 7로 변환, 나머지는 1을 빼서 월요일을 1로 만듦
-    const offset = firstDayWeekday === 0 ? 6 : firstDayWeekday - 1;
+    const offset = (firstDayWeekday + 6) % 7;
 
     // 현재 날짜의 일(day)
     const day = target.getDate();
