@@ -35,7 +35,15 @@ const AdminPage = () => {
       const d = parseISO(dateString);
       const month = d.getMonth() + 1;
       const day = d.getDate();
-      const week = Math.floor((day - 1) / 7) + 1;
+      
+      // 주차 계산 수정
+      let week;
+      if (day <= 7) week = 1;
+      else if (day <= 14) week = 2;
+      else if (day <= 21) week = 3;
+      else if (day <= 28) week = 4;
+      else week = 5;
+      
       return `${month}-${week}`;
     } catch (e) {
       return '';
@@ -241,7 +249,11 @@ const AdminPage = () => {
 
   const getCountryName = (code) => {
     const country = countries.find(c => c.code === code);
-    return country ? country.name : code;
+    if (country && country.code) {
+      const name = country.name.replace(`(${country.code})`, '').trim();
+      return `${name}\n(${country.code})`;
+    }
+    return code;
   };
 
   useEffect(() => {
@@ -278,40 +290,49 @@ const AdminPage = () => {
 
       <div className="admin-controls">
         <div className="filter-section">
-          <select 
-            value={selectedCountry} 
-            onChange={(e) => setSelectedCountry(e.target.value)}
-            className="filter-select"
-          >
-            {countries.map(country => (
-              <option key={country.code} value={country.code}>
-                {country.name}
-              </option>
-            ))}
-          </select>
+          <div className="filter-group">
+            <label>국가 (Country)</label>
+            <select 
+              value={selectedCountry} 
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="filter-select"
+            >
+              {countries.map(country => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <select 
-            value={selectedMonthWeek} 
-            onChange={(e) => setSelectedMonthWeek(e.target.value)}
-            className="filter-select"
-          >
-            <option value="">전체 주차</option>
-            {monthWeekOptions.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <div className="filter-group">
+            <label>월/주차 (Month/Week)</label>
+            <select 
+              value={selectedMonthWeek} 
+              onChange={(e) => setSelectedMonthWeek(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">전체 주차</option>
+              {monthWeekOptions.map(option => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <select 
-            value={selectedContactMethod} 
-            onChange={(e) => setSelectedContactMethod(e.target.value)}
-            className="filter-select"
-          >
-            <option value="">전체 연락방법</option>
-            <option value="연락">연락 (Contact)</option>
-            <option value="만남">만남 (Meeting)</option>
-          </select>
+          <div className="filter-group">
+            <label>연락방법 (Method)</label>
+            <select 
+              value={selectedContactMethod} 
+              onChange={(e) => setSelectedContactMethod(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">전체 연락방법</option>
+              <option value="연락">연락 (Contact)</option>
+              <option value="만남">만남 (Meeting)</option>
+            </select>
+          </div>
         </div>
 
         <div className="action-buttons">
@@ -426,7 +447,7 @@ const AdminPage = () => {
                   <>
                     <td className="no-wrap">{registration.monthWeekLabel}</td>
                     <td>{registration.fullName}</td>
-                    <td>{getCountryName(registration.country)}</td>
+                    <td className="country-cell">{getCountryName(registration.country)}</td>
                     <td className="no-wrap">{format(parseISO(registration.contactDate), 'yyyy-MM-dd')}</td>
                     <td>
                       <div className="header-label">
@@ -448,7 +469,7 @@ const AdminPage = () => {
                             className="btn-more"
                             onClick={() => openContentModal(registration.contactContent, '연락내용')}
                           >
-                            더보기
+                            more
                           </button>
                         )}
                       </div>

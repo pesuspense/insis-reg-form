@@ -43,6 +43,12 @@ code {
   width: auto;
 }
 
+.nav-logo {
+  width: auto;
+  height: 40px;
+  margin-right: 10px;
+}
+
 .form-title {
   text-align: center;
   color: #333;
@@ -268,13 +274,31 @@ textarea {
   align-items: center;
 }
 
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  margin-right: 15px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
+}
+
 .filter-select {
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  background: white;
   font-size: 14px;
-  min-width: 120px;
+  min-width: 150px;
+}
+
+/* 국가명 줄바꿈 스타일 */
+.country-cell {
+  white-space: pre-line;
+  line-height: 1.2;
 }
 
 .action-buttons {

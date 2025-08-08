@@ -46,11 +46,23 @@ ALTER TABLE registrations
   ADD COLUMN month_num integer GENERATED ALWAYS AS (extract(month from contact_date)::int) STORED;
 
 ALTER TABLE registrations
-  ADD COLUMN week_of_month integer GENERATED ALWAYS AS (((extract(day from contact_date)::int - 1) / 7) + 1) STORED;
+  ADD COLUMN week_of_month integer GENERATED ALWAYS AS (CASE 
+    WHEN extract(day from contact_date)::int <= 7 THEN 1
+    WHEN extract(day from contact_date)::int <= 14 THEN 2
+    WHEN extract(day from contact_date)::int <= 21 THEN 3
+    WHEN extract(day from contact_date)::int <= 28 THEN 4
+    ELSE 5
+  END) STORED;
 
 ALTER TABLE registrations
   ADD COLUMN month_week_label text GENERATED ALWAYS AS (
-    (extract(month from contact_date)::int)::text || '-' || (((extract(day from contact_date)::int - 1) / 7) + 1)::text
+    (extract(month from contact_date)::int)::text || '-' || (CASE 
+      WHEN extract(day from contact_date)::int <= 7 THEN 1
+      WHEN extract(day from contact_date)::int <= 14 THEN 2
+      WHEN extract(day from contact_date)::int <= 21 THEN 3
+      WHEN extract(day from contact_date)::int <= 28 THEN 4
+      ELSE 5
+    END)::text
   ) STORED;
 
 SELECT 'registrations 테이블이 성공적으로 생성되었습니다.' as message;
