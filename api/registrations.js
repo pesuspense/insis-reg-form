@@ -1,5 +1,4 @@
-import pkg from 'pg';
-const { Pool } = pkg;
+const { Pool } = require('pg');
 
 // PostgreSQL 연결
 const pool = new Pool({
@@ -7,7 +6,7 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS 설정
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, OPTIONS');
@@ -18,6 +17,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 데이터베이스 연결 테스트
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL이 설정되지 않았습니다.');
+      return res.status(500).json({ error: '데이터베이스 설정 오류' });
+    }
+
     switch (req.method) {
       case 'GET':
         return await handleGet(req, res);
@@ -32,35 +37,64 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('API 오류:', error);
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    return res.status(500).json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: error.message 
+    });
   }
 }
 
 // GET: 등록 데이터 조회
 async function handleGet(req, res) {
-  const { sortBy = 'created_at', sortOrder = 'desc' } = req.query;
-  
-  let orderBy = 'created_at';
-  switch (sortBy) {
-    case 'fullName':
-      orderBy = 'full_name';
-      break;
-    case 'contactDate':
-      orderBy = 'contact_date';
-      break;
-    case 'contactMethod':
-      orderBy = 'contact_method';
-      break;
-    case 'isRegistered':
-      orderBy = 'is_registered';
-      break;
-    default:
-      orderBy = 'created_at';
+  try {
+    const { sortBy = 'created_at', sortOrder = 'desc' } = req.query;
+    
+    let orderBy = 'created_at';
+    switch (sortBy) {
+      case 'fullName':
+        orderBy = 'full_name';
+        break;
+      case 'contactDate':
+        orderBy = 'contact_date';
+        break;
+      case 'contactMethod':
+        orderBy = 'contact_method';
+        break;
+      case 'isRegistered':
+        orderBy = 'is_registered';
+        break;
+      default:
+        orderBy = 'created_at';
+    }
+    
+    // 테이블 존재 여부 확인
+    const tableCheckQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'registrations'
+      );
+    `;
+    
+    const tableExists = await pool.query(tableCheckQuery);
+    if (!tableExists.rows[0].exists) {
+      console.error('registrations 테이블이 존재하지 않습니다.');
+      return res.status(500).json({ 
+        error: '데이터베이스 테이블이 존재하지 않습니다.',
+        details: 'registrations 테이블을 생성해주세요.'
+      });
+    }
+    
+    const query = `SELECT * FROM registrations ORDER BY ${orderBy} ${sortOrder.toUpperCase()}`;
+    const result = await pool.query(query);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error('GET 요청 오류:', error);
+    return res.status(500).json({ 
+      error: '데이터 조회 중 오류가 발생했습니다.',
+      details: error.message 
+    });
   }
-  
-  const query = `SELECT * FROM registrations ORDER BY ${orderBy} ${sortOrder.toUpperCase()}`;
-  const result = await pool.query(query);
-  return res.json(result.rows);
 }
 
 // POST: 등록 데이터 저장
