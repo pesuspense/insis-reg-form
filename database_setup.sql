@@ -103,4 +103,10 @@ ALTER TABLE registrations
     )::text
   ) STORED;
 
+-- 테스트 데이터 삽입 (2025년 8월 4, 5, 6일)
+INSERT INTO registrations (full_name, is_new_user, contact_date, contact_method, contact_sub_method, country) VALUES
+('테스트1', true, '2025-08-04', '연락', '전화', 'MN'),
+('테스트2', true, '2025-08-05', '연락', '메신저', 'DE'),
+('테스트3', false, '2025-08-06', '만남', '온라인', 'RO');
+
 SELECT 'registrations 테이블이 성공적으로 생성되었습니다.' as message;
