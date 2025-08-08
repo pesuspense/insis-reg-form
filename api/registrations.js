@@ -1,24 +1,45 @@
 const { Pool } = require('pg');
 
-// PostgreSQL 연결
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 1,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+// DATABASE_URL 수동 파싱 및 Pool 구성 생성
+function createPoolFromEnv() {
+  const raw = process.env.DATABASE_URL;
+  if (!raw || typeof raw !== 'string' || raw.trim().length === 0) {
+    console.error('DATABASE_URL이 비어있거나 유효하지 않습니다.');
+    return null;
+  }
 
-// 연결 테스트
-pool.on('error', (err) => {
-  console.error('PostgreSQL 연결 오류:', err);
-});
+  try {
+    const trimmed = raw.trim();
+    const url = new URL(trimmed);
 
-pool.on('connect', () => {
-  console.log('PostgreSQL에 연결되었습니다.');
-});
+    const pool = new Pool({
+      user: decodeURIComponent(url.username || ''),
+      password: decodeURIComponent(url.password || ''),
+      host: url.hostname,
+      port: url.port ? Number(url.port) : 5432,
+      database: url.pathname ? url.pathname.replace(/^\//, '') : undefined,
+      ssl: { rejectUnauthorized: false },
+      max: 1,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
+
+    // 연결 이벤트 로깅
+    pool.on('error', (err) => {
+      console.error('PostgreSQL 연결 오류:', err);
+    });
+    pool.on('connect', () => {
+      console.log('PostgreSQL에 연결되었습니다.');
+    });
+
+    return pool;
+  } catch (e) {
+    console.error('DATABASE_URL 파싱 실패:', e.message);
+    return null;
+  }
+}
+
+const pool = createPoolFromEnv();
 
 module.exports = async function handler(req, res) {
   // CORS 설정
@@ -40,13 +61,11 @@ module.exports = async function handler(req, res) {
     // DATABASE_URL 형식 확인
     console.log('DATABASE_URL 길이:', process.env.DATABASE_URL.length);
     console.log('DATABASE_URL 시작:', process.env.DATABASE_URL.substring(0, 20));
-    
-    // 연결 문자열 유효성 검사
-    if (!process.env.DATABASE_URL.startsWith('postgresql://')) {
-      console.error('잘못된 DATABASE_URL 형식:', process.env.DATABASE_URL);
-      return res.status(500).json({ error: '잘못된 데이터베이스 URL 형식' });
+
+    if (!pool) {
+      return res.status(500).json({ error: '데이터베이스 연결 초기화 실패' });
     }
-    
+
     // 기본 연결 테스트
     const testQuery = await pool.query('SELECT NOW() as current_time');
     console.log('데이터베이스 연결 성공:', testQuery.rows[0]);
