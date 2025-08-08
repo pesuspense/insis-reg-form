@@ -19,8 +19,25 @@ const AdminPage = () => {
   const loadRegistrations = async () => {
     try {
       setLoading(true);
-             const response = await axios.get(`${API_BASE_URL}/registrations?sortBy=${sortBy}&sortOrder=${sortOrder}`);
-      setRegistrations(response.data);
+      const response = await axios.get(`${API_BASE_URL}/registrations?sortBy=${sortBy}&sortOrder=${sortOrder}`);
+      const normalized = Array.isArray(response.data)
+        ? response.data.map((row) => ({
+            id: row.id,
+            fullName: row.full_name ?? row.fullName ?? '',
+            isNewUser: row.is_new_user ?? row.isNewUser ?? false,
+            gender: row.gender ?? '',
+            phone: row.phone ?? '',
+            email: row.email ?? '',
+            position: row.position ?? '',
+            organization: row.organization ?? '',
+            contactDate: row.contact_date ?? row.contactDate ?? null,
+            contactMethod: row.contact_method ?? row.contactMethod ?? '',
+            contactSubMethod: row.contact_sub_method ?? row.contactSubMethod ?? '',
+            contactContent: row.contact_content ?? row.contactContent ?? '',
+            isRegistered: row.is_registered ?? row.isRegistered ?? false,
+          }))
+        : [];
+      setRegistrations(normalized);
     } catch (error) {
       setMessage({ type: 'error', text: '데이터 로드 중 오류가 발생했습니다.' });
     } finally {
