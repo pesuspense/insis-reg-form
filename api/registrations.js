@@ -6,6 +6,15 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+// 연결 테스트
+pool.on('error', (err) => {
+  console.error('PostgreSQL 연결 오류:', err);
+});
+
+pool.on('connect', () => {
+  console.log('PostgreSQL에 연결되었습니다.');
+});
+
 module.exports = async function handler(req, res) {
   // CORS 설정
   res.setHeader('Access-Control-Allow-Origin', '*');
