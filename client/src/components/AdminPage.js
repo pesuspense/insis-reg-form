@@ -713,6 +713,70 @@ const AdminPage = () => {
                     </div>
                   </div>
 
+                  {/* 신규 사용자일 때만 표시되는 추가 정보 */}
+                  {editModal.data.isNewUser && (
+                    <>
+                      <div className="form-row">
+                        <div className="form-col">
+                          <label>성별 (Gender)</label>
+                          <select
+                            value={editModal.data.gender || ''}
+                            onChange={(e) => updateEditModalData('gender', e.target.value)}
+                            className="edit-input"
+                          >
+                            <option value="">선택하세요</option>
+                            <option value="남성">남성 (Male)</option>
+                            <option value="여성">여성 (Female)</option>
+                          </select>
+                        </div>
+                        <div className="form-col">
+                          <label>전화번호 (Phone)</label>
+                          <input
+                            type="tel"
+                            value={editModal.data.phone || ''}
+                            onChange={(e) => updateEditModalData('phone', e.target.value)}
+                            className="edit-input"
+                            placeholder="전화번호를 입력하세요"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="form-col">
+                          <label>이메일 (Email)</label>
+                          <input
+                            type="email"
+                            value={editModal.data.email || ''}
+                            onChange={(e) => updateEditModalData('email', e.target.value)}
+                            className="edit-input"
+                            placeholder="이메일을 입력하세요"
+                          />
+                        </div>
+                        <div className="form-col">
+                          <label>직책 (Position)</label>
+                          <input
+                            type="text"
+                            value={editModal.data.position || ''}
+                            onChange={(e) => updateEditModalData('position', e.target.value)}
+                            className="edit-input"
+                            placeholder="직책을 입력하세요"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label>소속 (Organization)</label>
+                        <input
+                          type="text"
+                          value={editModal.data.organization || ''}
+                          onChange={(e) => updateEditModalData('organization', e.target.value)}
+                          className="edit-input"
+                          placeholder="소속을 입력하세요"
+                        />
+                      </div>
+                    </>
+                  )}
+
                   <div className="form-group">
                     <label>연락내용 (Contact Content)</label>
                     <textarea
