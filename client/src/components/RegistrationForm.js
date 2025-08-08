@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import API_BASE_URL from '../config';
 
 const RegistrationForm = () => {
@@ -17,7 +14,7 @@ const RegistrationForm = () => {
       email: '',
       position: '',
       organization: '',
-      contactDate: new Date(),
+      contactDate: new Date().toISOString().split('T')[0],
       contactMethod: '',
       contactSubMethod: '',
       contactContent: '',
@@ -25,7 +22,7 @@ const RegistrationForm = () => {
     }
   ]);
 
-     const [message, setMessage] = useState({ type: '', text: '' });
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   const countries = [
     { code: 'MN', name: '몽골' },
@@ -71,7 +68,7 @@ const RegistrationForm = () => {
         email: '',
         position: '',
         organization: '',
-        contactDate: new Date(),
+        contactDate: new Date().toISOString().split('T')[0],
         contactMethod: '',
         contactSubMethod: '',
         contactContent: '',
@@ -123,7 +120,7 @@ const RegistrationForm = () => {
         email: '',
         position: '',
         organization: '',
-        contactDate: new Date(),
+        contactDate: new Date().toISOString().split('T')[0],
         contactMethod: '',
         contactSubMethod: '',
         contactContent: '',
