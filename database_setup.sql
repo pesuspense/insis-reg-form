@@ -45,24 +45,62 @@ CREATE TRIGGER update_registrations_updated_at
 ALTER TABLE registrations
   ADD COLUMN month_num integer GENERATED ALWAYS AS (extract(month from contact_date)::int) STORED;
 
+-- Week calculation logic updated based on ISO standard
 ALTER TABLE registrations
-  ADD COLUMN week_of_month integer GENERATED ALWAYS AS (CASE 
-    WHEN extract(day from contact_date)::int <= 7 THEN 1
-    WHEN extract(day from contact_date)::int <= 14 THEN 2
-    WHEN extract(day from contact_date)::int <= 21 THEN 3
-    WHEN extract(day from contact_date)::int <= 28 THEN 4
-    ELSE 5
-  END) STORED;
+  ADD COLUMN week_of_month integer GENERATED ALWAYS AS (
+    CASE
+      WHEN extract(day from contact_date) + 
+           (CASE 
+             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+           END) <= 7 THEN 1
+      WHEN extract(day from contact_date) + 
+           (CASE 
+             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+           END) <= 14 THEN 2
+      WHEN extract(day from contact_date) + 
+           (CASE 
+             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+           END) <= 21 THEN 3
+      WHEN extract(day from contact_date) + 
+           (CASE 
+             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+           END) <= 28 THEN 4
+      ELSE 5
+    END
+  ) STORED;
 
+-- month_week_label format and calculation logic updated
 ALTER TABLE registrations
   ADD COLUMN month_week_label text GENERATED ALWAYS AS (
-    (extract(month from contact_date)::int)::text || '-' || (CASE 
-      WHEN extract(day from contact_date)::int <= 7 THEN 1
-      WHEN extract(day from contact_date)::int <= 14 THEN 2
-      WHEN extract(day from contact_date)::int <= 21 THEN 3
-      WHEN extract(day from contact_date)::int <= 28 THEN 4
-      ELSE 5
-    END)::text
+    (extract(month from contact_date)::int)::text || '-' || (
+      CASE
+        WHEN extract(day from contact_date) + 
+             (CASE 
+               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             END) <= 7 THEN 1
+        WHEN extract(day from contact_date) + 
+             (CASE 
+               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             END) <= 14 THEN 2
+        WHEN extract(day from contact_date) + 
+             (CASE 
+               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             END) <= 21 THEN 3
+        WHEN extract(day from contact_date) + 
+             (CASE 
+               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
+               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             END) <= 28 THEN 4
+        ELSE 5
+      END
+    )::text
   ) STORED;
 
 SELECT 'registrations 테이블이 성공적으로 생성되었습니다.' as message;

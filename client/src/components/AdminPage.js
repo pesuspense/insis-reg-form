@@ -35,21 +35,34 @@ const AdminPage = () => {
     try {
       const d = parseISO(dateString);
       const month = d.getMonth() + 1;
-      const day = d.getDate();
-      
-      // 주차 계산 수정
-      let week;
-      if (day <= 7) week = 1;
-      else if (day <= 14) week = 2;
-      else if (day <= 21) week = 3;
-      else if (day <= 28) week = 4;
-      else week = 5;
-      
+      const week = getWeekOfMonth(d);
       return `${month}-${week}`;
     } catch (e) {
       return '';
     }
   };
+
+  // 월의 주차 계산 함수
+  function getWeekOfMonth(date) {
+    const target = new Date(date);
+    const year = target.getFullYear();
+    const month = target.getMonth(); // 0-based
+    const firstDay = new Date(year, month, 1);
+
+    // 첫 날의 요일 (0 = 일, 1 = 월, ..., 6 = 토)
+    const firstDayWeekday = firstDay.getDay();
+
+    // 주 시작을 월요일로 보정 (ISO 기준)
+    const offset = (firstDayWeekday + 6) % 7;
+
+    // 현재 날짜의 일(day)
+    const day = target.getDate();
+
+    // (현재 날짜 + 첫 주 보정) / 7 하고 올림 처리
+    const weekNumber = Math.ceil((day + offset) / 7);
+
+    return weekNumber;
+  }
 
   const loadRegistrations = async () => {
     try {
@@ -431,6 +444,9 @@ const AdminPage = () => {
                 <SortableHeader field="contactDate">
                    <span className="no-wrap">
                      <HeaderLabel ko="날짜" en="Date" />
+                     <span className="sort-arrow">
+                       {sortBy === 'contactDate' ? (sortOrder === 'ASC' ? '▲' : '▼') : '▼'}
+                     </span>
                    </span>
                  </SortableHeader>
                 <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
