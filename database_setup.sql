@@ -51,23 +51,23 @@ ALTER TABLE registrations
     CASE
       WHEN extract(day from contact_date) + 
            (CASE 
-             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
            END) <= 7 THEN 1
       WHEN extract(day from contact_date) + 
            (CASE 
-             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
            END) <= 14 THEN 2
       WHEN extract(day from contact_date) + 
            (CASE 
-             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
            END) <= 21 THEN 3
       WHEN extract(day from contact_date) + 
            (CASE 
-             WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-             ELSE extract(dow from date_trunc('month', contact_date)) - 1
+             WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+             ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
            END) <= 28 THEN 4
       ELSE 5
     END
@@ -80,23 +80,23 @@ ALTER TABLE registrations
       CASE
         WHEN extract(day from contact_date) + 
              (CASE 
-               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
              END) <= 7 THEN 1
         WHEN extract(day from contact_date) + 
              (CASE 
-               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
              END) <= 14 THEN 2
         WHEN extract(day from contact_date) + 
              (CASE 
-               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
              END) <= 21 THEN 3
         WHEN extract(day from contact_date) + 
              (CASE 
-               WHEN extract(dow from date_trunc('month', contact_date)) = 0 THEN 6
-               ELSE extract(dow from date_trunc('month', contact_date)) - 1
+               WHEN extract(dow from contact_date - extract(day from contact_date)::int + 1) = 0 THEN 6
+               ELSE extract(dow from contact_date - extract(day from contact_date)::int + 1) - 1
              END) <= 28 THEN 4
         ELSE 5
       END
