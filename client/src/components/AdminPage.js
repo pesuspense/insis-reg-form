@@ -17,6 +17,19 @@ const AdminPage = () => {
   const [adminAuthorized, setAdminAuthorized] = useState(false);
   const [contentModal, setContentModal] = useState({ open: false, text: '', title: '' });
 
+  // contactDate(ISO)로부터 "n월 m주차" 라벨 계산
+  const computeMonthWeekLabel = (dateString) => {
+    try {
+      const d = parseISO(dateString);
+      const month = d.getMonth() + 1;
+      const day = d.getDate();
+      const week = Math.floor((day - 1) / 7) + 1;
+      return `${month}월 ${week}주차`;
+    } catch (e) {
+      return '';
+    }
+  };
+
   // 데이터 로드
   const loadRegistrations = async () => {
     try {
@@ -37,6 +50,7 @@ const AdminPage = () => {
             contactSubMethod: row.contact_sub_method ?? row.contactSubMethod ?? '',
             contactContent: row.contact_content ?? row.contactContent ?? '',
             isRegistered: row.is_registered ?? row.isRegistered ?? false,
+            monthWeekLabel: row.month_week_label ?? computeMonthWeekLabel((row.contact_date ?? row.contactDate) || ''),
           }))
         : [];
       setRegistrations(normalized);
@@ -216,6 +230,7 @@ const AdminPage = () => {
         <table className="admin-table">
           <thead>
             <tr>
+              <th><HeaderLabel ko="월/주차" en="Month/Week" /></th>
               <SortableHeader field="fullName"><HeaderLabel ko="이름" en="Name" /></SortableHeader>
               <SortableHeader field="contactDate"><span className="no-wrap"><HeaderLabel ko="날짜" en="Date" /></span></SortableHeader>
               <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
@@ -232,6 +247,7 @@ const AdminPage = () => {
                 {editingId === registration.id ? (
                   // 수정 모드
                   <>
+                    <td className="no-wrap">{registration.monthWeekLabel}</td>
                     <td>
                       <input
                         type="text"
@@ -315,6 +331,7 @@ const AdminPage = () => {
                 ) : (
                   // 보기 모드
                   <>
+                    <td className="no-wrap">{registration.monthWeekLabel}</td>
                     <td>{registration.fullName}</td>
                     <td className="no-wrap">{format(parseISO(registration.contactDate), 'yyyy-MM-dd')}</td>
                     <td>

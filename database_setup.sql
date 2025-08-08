@@ -36,3 +36,15 @@ CREATE TRIGGER update_registrations_updated_at
 
 -- 테이블 생성 확인
 SELECT 'registrations 테이블이 성공적으로 생성되었습니다.' as message;
+
+-- 월/주차 파생 컬럼 추가 (이미 존재 시 건너뜀)
+ALTER TABLE registrations
+  ADD COLUMN IF NOT EXISTS month_num integer GENERATED ALWAYS AS (extract(month from contact_date)::int) STORED;
+
+ALTER TABLE registrations
+  ADD COLUMN IF NOT EXISTS week_of_month integer GENERATED ALWAYS AS (((extract(day from contact_date)::int - 1) / 7) + 1) STORED;
+
+ALTER TABLE registrations
+  ADD COLUMN IF NOT EXISTS month_week_label text GENERATED ALWAYS AS (
+    concat(extract(month from contact_date)::int, '월 ', (((extract(day from contact_date)::int - 1) / 7) + 1), '주차')
+  ) STORED;
