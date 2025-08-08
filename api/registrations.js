@@ -41,19 +41,6 @@ function createPoolFromEnv() {
 
 const pool = createPoolFromEnv();
 
-// 한글 값 → 영어 값 매핑
-function toEnglishMethod(value) {
-  switch (value) {
-    case '연락': return 'Contact';
-    case '만남': return 'Meeting';
-    case '전화': return 'Phone';
-    case '메신저': return 'Messenger';
-    case '온라인': return 'Online';
-    case '오프라인': return 'Offline';
-    default: return value || '';
-  }
-}
-
 module.exports = async function handler(req, res) {
   // CORS 설정
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -187,9 +174,7 @@ async function handleGet(req, res) {
         organization,
         contact_date,
         contact_method,
-        COALESCE(contact_method_en, '') as contact_method_en,
         contact_sub_method,
-        COALESCE(contact_sub_method_en, '') as contact_sub_method_en,
         contact_content,
         country,
         is_registered,
@@ -229,16 +214,12 @@ async function handlePost(req, res) {
 
   const insertPromises = registrations.map(registration => {
     const fullName = `${registration.firstName} ${registration.lastName}`.trim();
-    const methodKo = registration.contactMethod;
-    const subMethodKo = registration.contactSubMethod;
-    const methodEn = toEnglishMethod(methodKo);
-    const subMethodEn = toEnglishMethod(subMethodKo);
     
     const query = `
       INSERT INTO registrations 
       (full_name, is_new_user, gender, phone, email, position, organization, 
-       contact_date, contact_method, contact_method_en, contact_sub_method, contact_sub_method_en, contact_content, country, is_registered)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+       contact_date, contact_method, contact_sub_method, contact_content, country, is_registered)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id
     `;
     
@@ -251,10 +232,8 @@ async function handlePost(req, res) {
       registration.position || null,
       registration.organization || null,
       registration.contactDate,
-      methodKo,
-      methodEn,
-      subMethodKo,
-      subMethodEn,
+      registration.contactMethod,
+      registration.contactSubMethod,
       registration.contactContent || null,
       registration.country || 'MN',
       false

@@ -64,13 +64,6 @@ ALTER TABLE registrations
   ADD CONSTRAINT IF NOT EXISTS check_country_code
   CHECK (country IN ('MN', 'DE', 'RO', 'AZ'));
 
--- 영문 컬럼들 추가 (이미 존재 시 건너뜀)
-ALTER TABLE registrations
-  ADD COLUMN IF NOT EXISTS contact_method_en VARCHAR(100);
-
-ALTER TABLE registrations
-  ADD COLUMN IF NOT EXISTS contact_sub_method_en VARCHAR(100);
-
 -- 기존 데이터 삭제
 DELETE FROM registrations;
 

@@ -70,8 +70,6 @@ const AdminPage = () => {
         isRegistered: item.is_registered,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
-        contactMethodEn: item.contact_method_en,
-        contactSubMethodEn: item.contact_sub_method_en,
         country: item.country,
         monthWeekLabel: item.month_week_label ?? computeMonthWeekLabel((item.contact_date ?? item.contactDate) || ''),
       }));
