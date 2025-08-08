@@ -3,7 +3,12 @@ const { Pool } = require('pg');
 // PostgreSQL 연결
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: {
+    rejectUnauthorized: false
+  },
+  max: 1,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 // 연결 테스트
@@ -32,8 +37,15 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: '데이터베이스 설정 오류' });
     }
 
-    // 간단한 연결 테스트
-    console.log('DATABASE_URL:', process.env.DATABASE_URL.substring(0, 50) + '...');
+    // DATABASE_URL 형식 확인
+    console.log('DATABASE_URL 길이:', process.env.DATABASE_URL.length);
+    console.log('DATABASE_URL 시작:', process.env.DATABASE_URL.substring(0, 20));
+    
+    // 연결 문자열 유효성 검사
+    if (!process.env.DATABASE_URL.startsWith('postgresql://')) {
+      console.error('잘못된 DATABASE_URL 형식:', process.env.DATABASE_URL);
+      return res.status(500).json({ error: '잘못된 데이터베이스 URL 형식' });
+    }
     
     // 기본 연결 테스트
     const testQuery = await pool.query('SELECT NOW() as current_time');
