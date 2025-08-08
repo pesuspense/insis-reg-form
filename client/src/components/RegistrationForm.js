@@ -115,6 +115,10 @@ const RegistrationForm = () => {
         }))
       });
 
+      // 성공 알림(alert)
+      const savedCount = response?.data?.count ?? registrations.length;
+      window.alert(`등록이 성공적으로 완료되었습니다! (${savedCount}개 항목)`);
+
              setMessage({ 
          type: 'success', 
          text: `✅ 등록이 성공적으로 완료되었습니다! (${registrations.length}개 항목) / Registration completed successfully! (${registrations.length} items)` 
