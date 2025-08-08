@@ -109,6 +109,8 @@ async function handleGet(req, res) {
   try {
     const { sortBy = 'created_at', sortOrder = 'desc', country, monthWeek } = req.query;
     
+    console.log('GET 요청 파라미터:', { sortBy, sortOrder, country, monthWeek });
+    
     let orderBy = 'created_at';
     switch (sortBy) {
       case 'fullName':
@@ -126,6 +128,9 @@ async function handleGet(req, res) {
       case 'country':
         orderBy = 'country';
         break;
+      case 'createdAt':
+        orderBy = 'created_at';
+        break;
       default:
         orderBy = 'created_at';
     }
@@ -139,7 +144,10 @@ async function handleGet(req, res) {
       );
     `;
     
+    console.log('테이블 존재 여부 확인 중...');
     const tableExists = await pool.query(tableCheckQuery);
+    console.log('테이블 존재 여부:', tableExists.rows[0].exists);
+    
     if (!tableExists.rows[0].exists) {
       console.error('registrations 테이블이 존재하지 않습니다.');
       return res.status(500).json({ 
@@ -193,13 +201,20 @@ async function handleGet(req, res) {
       ORDER BY ${orderBy} ${sortOrder.toUpperCase()}
     `;
     
+    console.log('실행할 쿼리:', query);
+    console.log('쿼리 파라미터:', queryParams);
+    
     const result = await pool.query(query, queryParams);
+    console.log('쿼리 결과 행 수:', result.rows.length);
+    
     return res.json(result.rows);
   } catch (error) {
     console.error('GET 요청 오류:', error);
+    console.error('오류 스택:', error.stack);
     return res.status(500).json({ 
       error: '데이터 조회 중 오류가 발생했습니다.',
-      details: error.message 
+      details: error.message,
+      code: error.code
     });
   }
 }

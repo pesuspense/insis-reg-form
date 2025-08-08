@@ -16,7 +16,7 @@ function App() {
               alt="IPYG Logo" 
               className="nav-logo"
             />
-            <h1 className="nav-title">INSIS Contact&Meeting Registration</h1>
+            <h1 className="nav-title">INSIS Contact&Meeting Registration (G09)</h1>
           </div>
           <div className="nav-buttons">
             <button 

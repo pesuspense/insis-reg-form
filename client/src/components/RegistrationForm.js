@@ -184,14 +184,7 @@ const RegistrationForm = () => {
   return (
     <div className="form-container">
       <div className="title-container">
-        <img 
-          src="https://www.hwpl.kr/wp-content/uploads/2024/02/ipyg.png" 
-          alt="IPYG Logo" 
-          className="ipyg-logo"
-          width="40" 
-          height="40"
-        />
-        <h1 className="form-title">INSIS Contact&Meeting Registration (G09 IPYG)</h1>
+        <h1 className="form-title">입력폼 (Input Form)</h1>
       </div>
       
       {message.text && (
