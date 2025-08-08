@@ -121,6 +121,14 @@ const AdminPage = () => {
     </th>
   );
 
+  // 테이블 헤더 한/영 줄바꿈 라벨
+  const HeaderLabel = ({ ko, en }) => (
+    <span className="header-label">
+      <span className="ko">{ko}</span>
+      <span className="en">{en}</span>
+    </span>
+  );
+
   if (loading) {
     return <div className="loading">데이터를 불러오는 중...</div>;
   }
@@ -146,24 +154,26 @@ const AdminPage = () => {
 
       <div className="admin-controls">
         <div className="sort-controls">
-          <label>정렬 기준 (Sort By):</label>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="createdAt">등록일 (Created Date)</option>
-            <option value="fullName">이름 (Name)</option>
-            <option value="contactDate">날짜 (Date)</option>
-            <option value="contactMethod">연락방법 (Contact Method)</option>
-            <option value="isRegistered">등록여부 (Registration Status)</option>
+          <label className="sort-label">정렬 기준</label>
+          <select className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="createdAt">등록일</option>
+            <option value="fullName">이름</option>
+            <option value="contactDate">날짜</option>
+            <option value="contactMethod">연락방법</option>
+            <option value="isRegistered">등록여부</option>
           </select>
           <button 
             onClick={() => setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')}
-            className="btn btn-secondary"
+            className="btn btn-secondary btn-icon"
+            title={sortOrder === 'ASC' ? '오름차순' : '내림차순'}
+            aria-label="정렬 방향 토글"
           >
-            {sortOrder === 'ASC' ? '오름차순 (Ascending)' : '내림차순 (Descending)'}
+            {sortOrder === 'ASC' ? '▲' : '▼'}
           </button>
         </div>
         
-        <button onClick={loadRegistrations} className="btn btn-primary">
-          새로고침 (Refresh)
+        <button onClick={loadRegistrations} className="btn btn-primary btn-refresh" title="새로고침">
+          🔄 새로고침
         </button>
       </div>
 
@@ -171,14 +181,14 @@ const AdminPage = () => {
         <table className="admin-table">
           <thead>
             <tr>
-              <SortableHeader field="fullName">이름 (Name)</SortableHeader>
-              <SortableHeader field="contactDate">날짜 (Date)</SortableHeader>
-              <SortableHeader field="contactMethod">연락방법 (Contact Method)</SortableHeader>
-              <th>세부방법 (Detail Method)</th>
-              <th>연락내용 (Content)</th>
-              <th>사용자 유형 (User Type)</th>
-              <SortableHeader field="isRegistered">등록여부 (Registered)</SortableHeader>
-              <th>작업 (Actions)</th>
+              <SortableHeader field="fullName"><HeaderLabel ko="이름" en="Name" /></SortableHeader>
+              <SortableHeader field="contactDate"><HeaderLabel ko="날짜" en="Date" /></SortableHeader>
+              <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
+              <th><HeaderLabel ko="세부방법" en="Detail Method" /></th>
+              <th><HeaderLabel ko="연락내용" en="Content" /></th>
+              <th><HeaderLabel ko="사용자 유형" en="User Type" /></th>
+              <SortableHeader field="isRegistered"><HeaderLabel ko="등록여부" en="Registered" /></SortableHeader>
+              <th><HeaderLabel ko="작업" en="Actions" /></th>
             </tr>
           </thead>
           <tbody>

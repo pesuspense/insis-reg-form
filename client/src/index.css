@@ -370,6 +370,7 @@ textarea {
   border: 2px solid #e1e5e9;
   border-radius: 6px;
   font-size: 14px;
+  max-width: 140px;
 }
 
 .table-container {
@@ -405,6 +406,31 @@ textarea {
 .admin-table th.active-sort {
   background-color: #e3f2fd;
   color: #007bff;
+}
+
+/* 테이블 헤더 한/영 줄바꿈 스타일 */
+.header-label {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.header-label .ko {
+  font-weight: 700;
+}
+.header-label .en {
+  font-size: 11px;
+  color: #667085;
+}
+
+/* 아이콘 버튼 및 새로고침 버튼 개선 */
+.btn-icon {
+  padding: 8px 10px;
+  min-width: 36px;
+}
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .admin-table tr:hover {
