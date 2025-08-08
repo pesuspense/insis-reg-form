@@ -32,6 +32,13 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: '데이터베이스 설정 오류' });
     }
 
+    // 간단한 연결 테스트
+    console.log('DATABASE_URL:', process.env.DATABASE_URL.substring(0, 50) + '...');
+    
+    // 기본 연결 테스트
+    const testQuery = await pool.query('SELECT NOW() as current_time');
+    console.log('데이터베이스 연결 성공:', testQuery.rows[0]);
+
     switch (req.method) {
       case 'GET':
         return await handleGet(req, res);
