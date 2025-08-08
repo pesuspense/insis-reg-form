@@ -63,3 +63,11 @@ ALTER TABLE registrations
 ALTER TABLE registrations
   ADD CONSTRAINT IF NOT EXISTS check_country_code
   CHECK (country IN ('MN', 'DE', 'RO', 'AZ'));
+
+-- 기존 데이터 삭제
+DELETE FROM registrations;
+
+-- 시퀀스 리셋 (새로운 ID부터 시작)
+ALTER SEQUENCE registrations_id_seq RESTART WITH 1;
+
+SELECT '기존 데이터가 삭제되었습니다.' as message;
