@@ -16,6 +16,17 @@ const AdminPage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [adminAuthorized, setAdminAuthorized] = useState(false);
   const [contentModal, setContentModal] = useState({ open: false, text: '', title: '' });
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedMonthWeek, setSelectedMonthWeek] = useState('');
+  const [monthWeekOptions, setMonthWeekOptions] = useState([]);
+
+  const countries = [
+    { code: '', name: '전체' },
+    { code: 'MN', name: '몽골' },
+    { code: 'DE', name: '베를린' },
+    { code: 'RO', name: '루마니아' },
+    { code: 'AZ', name: '아제르바이잔' }
+  ];
 
   // contactDate(ISO)로부터 "n월 m주차" 라벨 계산
   const computeMonthWeekLabel = (dateString) => {
@@ -30,30 +41,46 @@ const AdminPage = () => {
     }
   };
 
-  // 데이터 로드
   const loadRegistrations = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/registrations?sortBy=${sortBy}&sortOrder=${sortOrder}`);
-      const normalized = Array.isArray(response.data)
-        ? response.data.map((row) => ({
-            id: row.id,
-            fullName: row.full_name ?? row.fullName ?? '',
-            isNewUser: row.is_new_user ?? row.isNewUser ?? false,
-            gender: row.gender ?? '',
-            phone: row.phone ?? '',
-            email: row.email ?? '',
-            position: row.position ?? '',
-            organization: row.organization ?? '',
-            contactDate: row.contact_date ?? row.contactDate ?? null,
-            contactMethod: row.contact_method ?? row.contactMethod ?? '',
-            contactSubMethod: row.contact_sub_method ?? row.contactSubMethod ?? '',
-            contactContent: row.contact_content ?? row.contactContent ?? '',
-            isRegistered: row.is_registered ?? row.isRegistered ?? false,
-            monthWeekLabel: row.month_week_label ?? computeMonthWeekLabel((row.contact_date ?? row.contactDate) || ''),
-          }))
-        : [];
-      setRegistrations(normalized);
+      const params = new URLSearchParams({
+        sortBy,
+        sortOrder,
+        ...(selectedCountry && { country: selectedCountry }),
+        ...(selectedMonthWeek && { monthWeek: selectedMonthWeek })
+      });
+      
+      const response = await axios.get(`${API_BASE_URL}/registrations?${params}`);
+      
+      // API 응답 필드를 camelCase로 변환
+      const transformedData = response.data.map(item => ({
+        id: item.id,
+        fullName: item.full_name,
+        isNewUser: item.is_new_user,
+        gender: item.gender,
+        phone: item.phone,
+        email: item.email,
+        position: item.position,
+        organization: item.organization,
+        contactDate: item.contact_date,
+        contactMethod: item.contact_method,
+        contactSubMethod: item.contact_sub_method,
+        contactContent: item.contact_content,
+        isRegistered: item.is_registered,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        contactMethodEn: item.contact_method_en,
+        contactSubMethodEn: item.contact_sub_method_en,
+        country: item.country,
+        monthWeekLabel: item.month_week_label ?? computeMonthWeekLabel((item.contact_date ?? item.contactDate) || ''),
+      }));
+      
+      setRegistrations(transformedData);
+      
+      // 월/주차 옵션 업데이트
+      const uniqueMonthWeeks = [...new Set(transformedData.map(item => item.monthWeekLabel).filter(Boolean))];
+      setMonthWeekOptions(uniqueMonthWeeks.sort());
     } catch (error) {
       setMessage({ type: 'error', text: '데이터 로드 중 오류가 발생했습니다.' });
     } finally {
@@ -61,50 +88,33 @@ const AdminPage = () => {
     }
   };
 
-  useEffect(() => {
-    loadRegistrations();
-  }, [sortBy, sortOrder]);
-
-  // 정렬 변경
-  const handleSortChange = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
-    } else {
-      setSortBy(field);
-      setSortOrder('ASC');
-    }
-  };
-
-  // 등록 상태 변경
   const handleRegisterChange = async (id, isRegistered) => {
-    try {
-      if (!adminAuthorized) {
-        const input = window.prompt('관리자 비밀번호를 입력하세요');
-        if (input !== '[!@light12]') {
-          setMessage({ type: 'error', text: '관리자 비밀번호가 올바르지 않습니다.' });
-          // 변경 취소를 위해 목록 재로드
-          loadRegistrations();
-          return;
-        }
-        setAdminAuthorized(true);
+    if (!adminAuthorized) {
+      const password = prompt('관리자 비밀번호를 입력하세요:');
+      if (password !== '[!@light12]') {
+        alert('비밀번호가 올바르지 않습니다.');
+        return;
       }
-             await axios.patch(`${API_BASE_URL}/registrations/${id}/register`, { isRegistered });
-             setMessage({ 
-         type: 'success', 
-         text: `✅ 등록 상태가 업데이트되었습니다! (${isRegistered ? '등록됨' : '미등록'}) / Registration status updated! (${isRegistered ? 'Registered' : 'Not Registered'})` 
-       });
-       
-       // 3초 후 성공 메시지 자동 제거
-       setTimeout(() => {
-         setMessage({ type: '', text: '' });
-       }, 3000);
-      loadRegistrations();
+      setAdminAuthorized(true);
+    }
+
+    try {
+      await axios.patch(`${API_BASE_URL}/registrations/${id}/register`, {
+        isRegistered
+      });
+      
+      setRegistrations(prev => 
+        prev.map(reg => 
+          reg.id === id ? { ...reg, isRegistered } : reg
+        )
+      );
+      
+      setMessage({ type: 'success', text: '등록 상태가 업데이트되었습니다.' });
     } catch (error) {
-      setMessage({ type: 'error', text: '등록 상태 업데이트 중 오류가 발생했습니다.' });
+      setMessage({ type: 'error', text: '상태 업데이트 중 오류가 발생했습니다.' });
     }
   };
 
-  // 수정 모드 시작
   const startEdit = (registration) => {
     setEditingId(registration.id);
     setEditForm({
@@ -113,13 +123,11 @@ const AdminPage = () => {
     });
   };
 
-  // 수정 모드 취소
   const cancelEdit = () => {
     setEditingId(null);
     setEditForm({});
   };
 
-  // 수정 저장
   const saveEdit = async () => {
     try {
       const updateData = {
@@ -145,7 +153,6 @@ const AdminPage = () => {
     }
   };
 
-  // 수정 폼 필드 업데이트
   const updateEditForm = (field, value) => {
     setEditForm(prev => ({
       ...prev,
@@ -153,98 +160,183 @@ const AdminPage = () => {
     }));
   };
 
-  // 정렬 헤더 렌더링
-  const SortableHeader = ({ field, children }) => (
-    <th 
-      onClick={() => handleSortChange(field)}
-      style={{ cursor: 'pointer', userSelect: 'none' }}
-      className={sortBy === field ? 'active-sort' : ''}
-    >
-      {children} {sortBy === field && (sortOrder === 'ASC' ? '↑' : '↓')}
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+      setSortBy(field);
+      setSortOrder('ASC');
+    }
+  };
+
+  const openContentModal = (text, title) => {
+    setContentModal({ open: true, text, title });
+  };
+
+  const closeContentModal = () => {
+    setContentModal({ open: false, text: '', title: '' });
+  };
+
+  const exportToExcel = () => {
+    const headers = [
+      'ID', '이름', '국가', '성별', '전화번호', '이메일', '직책', '소속',
+      '연락날짜', '월/주차', '연락방법', '세부방법', '연락내용', '신규사용자', '등록여부', '생성일'
+    ];
+    
+    const data = registrations.map(reg => [
+      reg.id,
+      reg.fullName,
+      reg.country,
+      reg.gender || '',
+      reg.phone || '',
+      reg.email || '',
+      reg.position || '',
+      reg.organization || '',
+      reg.contactDate ? format(parseISO(reg.contactDate), 'yyyy-MM-dd') : '',
+      reg.monthWeekLabel || '',
+      reg.contactMethod || '',
+      reg.contactSubMethod || '',
+      reg.contactContent || '',
+      reg.isNewUser ? 'Y' : 'N',
+      reg.isRegistered ? 'Y' : 'N',
+      reg.createdAt ? format(parseISO(reg.createdAt), 'yyyy-MM-dd HH:mm:ss') : ''
+    ]);
+    
+    const csvContent = [headers, ...data]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `registrations_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const getContactMethodEn = (method) => {
+    switch (method) {
+      case '연락': return 'Contact';
+      case '만남': return 'Meeting';
+      default: return method || '';
+    }
+  };
+
+  const getContactSubMethodEn = (subMethod) => {
+    switch (subMethod) {
+      case '전화': return 'Phone';
+      case '메신저': return 'Messenger';
+      case '온라인': return 'Online';
+      case '오프라인': return 'Offline';
+      default: return subMethod || '';
+    }
+  };
+
+  const getUserTypeEn = (isNewUser) => {
+    return isNewUser ? 'New' : 'Existing';
+  };
+
+  const getCountryName = (code) => {
+    const country = countries.find(c => c.code === code);
+    return country ? country.name : code;
+  };
+
+  useEffect(() => {
+    loadRegistrations();
+  }, [sortBy, sortOrder, selectedCountry, selectedMonthWeek]);
+
+  const SortableHeader = ({ children, field }) => (
+    <th onClick={() => handleSort(field)} style={{ cursor: 'pointer' }}>
+      {children}
+      {sortBy === field && (
+        <span style={{ marginLeft: '5px' }}>
+          {sortOrder === 'ASC' ? '↑' : '↓'}
+        </span>
+      )}
     </th>
   );
 
-  // 테이블 헤더 한/영 줄바꿈 라벨
   const HeaderLabel = ({ ko, en }) => (
-    <span className="header-label">
+    <div className="header-label">
       <span className="ko">{ko}</span>
       <span className="en">{en}</span>
-    </span>
+    </div>
   );
 
-  const openContentModal = (title, text) => {
-    setContentModal({ open: true, text: text || '-', title });
-  };
-
-  const closeContentModal = () => setContentModal({ open: false, text: '', title: '' });
-
-  if (loading) {
-    return <div className="loading">데이터를 불러오는 중...</div>;
-  }
-
   return (
-    <div className="admin-container">
-      <div className="title-container">
-        <img 
-          src="https://www.hwpl.kr/wp-content/uploads/2024/02/ipyg.png" 
-          alt="IPYG Logo" 
-          className="ipyg-logo"
-          width="40" 
-          height="40"
-        />
-        <h1 className="admin-title">등록 관리 페이지 (Admin Page)</h1>
-      </div>
+    <div className="admin-page">
+      <h2>관리자 페이지</h2>
       
       {message.text && (
-        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`}>
+        <div className={`message ${message.type}`}>
           {message.text}
         </div>
       )}
 
       <div className="admin-controls">
-        <div className="sort-controls">
-          <label className="sort-label">정렬 기준</label>
-          <select className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="createdAt">등록일</option>
-            <option value="fullName">이름</option>
-            <option value="contactDate">날짜</option>
-            <option value="contactMethod">연락방법</option>
-            <option value="isRegistered">등록여부</option>
-          </select>
-          <button 
-            onClick={() => setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')}
-            className="btn btn-secondary btn-icon"
-            title={sortOrder === 'ASC' ? '오름차순' : '내림차순'}
-            aria-label="정렬 방향 토글"
+        <div className="filter-section">
+          <select 
+            value={selectedCountry} 
+            onChange={(e) => setSelectedCountry(e.target.value)}
+            className="filter-select"
           >
-            {sortOrder === 'ASC' ? '▲' : '▼'}
+            {countries.map(country => (
+              <option key={country.code} value={country.code}>
+                {country.name}
+              </option>
+            ))}
+          </select>
+
+          <select 
+            value={selectedMonthWeek} 
+            onChange={(e) => setSelectedMonthWeek(e.target.value)}
+            className="filter-select"
+          >
+            <option value="">전체 주차</option>
+            {monthWeekOptions.map(option => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="action-buttons">
+          <button onClick={loadRegistrations} className="refresh-btn">
+            새로고침
+          </button>
+          <button onClick={exportToExcel} className="export-btn">
+            엑셀 다운로드
           </button>
         </div>
-        
-        <button onClick={loadRegistrations} className="btn btn-primary btn-refresh" title="새로고침">
-          🔄 새로고침
-        </button>
       </div>
 
-      <div className="table-container">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th><HeaderLabel ko="월/주차" en="Month/Week" /></th>
-              <SortableHeader field="fullName"><HeaderLabel ko="이름" en="Name" /></SortableHeader>
-              <SortableHeader field="contactDate"><span className="no-wrap"><HeaderLabel ko="날짜" en="Date" /></span></SortableHeader>
-              <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
-              <th><HeaderLabel ko="세부방법" en="Detail Method" /></th>
-              <th><HeaderLabel ko="연락내용" en="Content" /></th>
-              <th><HeaderLabel ko="사용자 유형" en="User Type" /></th>
-              <SortableHeader field="isRegistered"><HeaderLabel ko="등록여부" en="Registered" /></SortableHeader>
-              <th><HeaderLabel ko="작업" en="Actions" /></th>
-            </tr>
-          </thead>
-          <tbody>
-            {registrations.map((registration) => (
-              <tr key={registration.id} className={registration.isRegistered ? 'registered' : 'not-registered'}>
-                {editingId === registration.id ? (
+      {loading ? (
+        <div className="loading">로딩 중...</div>
+      ) : (
+        <div className="table-container">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th><HeaderLabel ko="월/주차" en="Month/Week" /></th>
+                <SortableHeader field="fullName"><HeaderLabel ko="이름" en="Name" /></SortableHeader>
+                <SortableHeader field="country"><HeaderLabel ko="국가" en="Country" /></SortableHeader>
+                <SortableHeader field="contactDate"><span className="no-wrap"><HeaderLabel ko="날짜" en="Date" /></span></SortableHeader>
+                <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
+                <th><HeaderLabel ko="세부방법" en="Detail Method" /></th>
+                <th><HeaderLabel ko="연락내용" en="Content" /></th>
+                <th><HeaderLabel ko="사용자 유형" en="User Type" /></th>
+                <SortableHeader field="isRegistered"><HeaderLabel ko="등록여부" en="Registered" /></SortableHeader>
+                <th><HeaderLabel ko="작업" en="Actions" /></th>
+              </tr>
+            </thead>
+            <tbody>
+              {registrations.map((registration) => (
+                <tr key={registration.id} className={registration.isRegistered ? 'registered' : 'not-registered'}>
+                  {editingId === registration.id ? (
                   // 수정 모드
                   <>
                     <td className="no-wrap">{registration.monthWeekLabel}</td>
@@ -253,15 +345,6 @@ const AdminPage = () => {
                         type="text"
                         value={editForm.fullName}
                         onChange={(e) => updateEditForm('fullName', e.target.value)}
-                        className="edit-input"
-                      />
-                    </td>
-                    <td>
-                      <DatePicker
-                        selected={editForm.contactDate}
-                        onChange={(date) => updateEditForm('contactDate', date)}
-                        dateFormat="yyyy-MM-dd"
-                        locale={ko}
                         className="edit-input"
                       />
                     </td>
@@ -333,38 +416,37 @@ const AdminPage = () => {
                   <>
                     <td className="no-wrap">{registration.monthWeekLabel}</td>
                     <td>{registration.fullName}</td>
+                    <td>{getCountryName(registration.country)}</td>
                     <td className="no-wrap">{format(parseISO(registration.contactDate), 'yyyy-MM-dd')}</td>
                     <td>
                       <div className="header-label">
                         <span className="ko">{registration.contactMethod}</span>
-                        <span className="en">{registration.contactMethod && (registration.contactMethod === '연락' ? 'Contact' : registration.contactMethod === '만남' ? 'Meeting' : registration.contactMethod)}</span>
+                        <span className="en">{getContactMethodEn(registration.contactMethod)}</span>
                       </div>
                     </td>
                     <td>
                       <div className="header-label">
                         <span className="ko">{registration.contactSubMethod}</span>
-                        <span className="en">{
-                          registration.contactSubMethod && (
-                            registration.contactSubMethod === '전화' ? 'Phone' :
-                            registration.contactSubMethod === '메신저' ? 'Messenger' :
-                            registration.contactSubMethod === '온라인' ? 'Online' :
-                            registration.contactSubMethod === '오프라인' ? 'Offline' : registration.contactSubMethod
-                          )
-                        }</span>
+                        <span className="en">{getContactSubMethodEn(registration.contactSubMethod)}</span>
                       </div>
                     </td>
-                    <td className="content-cell">
-                      <span className="content-text">{registration.contactContent || '-'}</span>
-                      {registration.contactContent && registration.contactContent.length > 0 && (
-                        <button type="button" className="btn btn-secondary btn-sm more-btn" onClick={() => openContentModal(`${registration.fullName} - 연락내용`, registration.contactContent)}>
-                          더보기
-                        </button>
-                      )}
+                    <td>
+                      <div className="content-preview">
+                        {registration.contactContent}
+                        {registration.contactContent && registration.contactContent.length > 50 && (
+                          <button 
+                            className="btn-more"
+                            onClick={() => openContentModal(registration.contactContent, '연락내용')}
+                          >
+                            더보기
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div className="header-label">
                         <span className="ko">{registration.isNewUser ? '신규' : '기존'}</span>
-                        <span className="en">{registration.isNewUser ? 'New' : 'Existing'}</span>
+                        <span className="en">{getUserTypeEn(registration.isNewUser)}</span>
                       </div>
                     </td>
                     <td>
@@ -387,31 +469,24 @@ const AdminPage = () => {
                 )}
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {contentModal.open && (
-        <div className="modal-backdrop" onClick={closeContentModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={closeContentModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">{contentModal.title}</h3>
-              <button className="modal-close" onClick={closeContentModal}>×</button>
+              <h3>{contentModal.title}</h3>
+              <button onClick={closeContentModal} className="close-btn">&times;</button>
             </div>
             <div className="modal-body">
-              <pre className="modal-pre">{contentModal.text}</pre>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-primary" onClick={closeContentModal}>닫기</button>
+              <pre>{contentModal.text}</pre>
             </div>
           </div>
         </div>
       )}
-
-      <div className="summary">
-        <p>총 {registrations.length}개 항목 중 {registrations.filter(r => r.isRegistered).length}개 등록됨</p>
-        <p>Total {registrations.length} items, {registrations.filter(r => r.isRegistered).length} registered</p>
-      </div>
     </div>
   );
 };

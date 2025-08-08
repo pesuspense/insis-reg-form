@@ -107,7 +107,7 @@ module.exports = async function handler(req, res) {
 // GET: 등록 데이터 조회
 async function handleGet(req, res) {
   try {
-    const { sortBy = 'created_at', sortOrder = 'desc' } = req.query;
+    const { sortBy = 'created_at', sortOrder = 'desc', country, monthWeek } = req.query;
     
     let orderBy = 'created_at';
     switch (sortBy) {
@@ -122,6 +122,9 @@ async function handleGet(req, res) {
         break;
       case 'isRegistered':
         orderBy = 'is_registered';
+        break;
+      case 'country':
+        orderBy = 'country';
         break;
       default:
         orderBy = 'created_at';
@@ -145,8 +148,52 @@ async function handleGet(req, res) {
       });
     }
     
-    const query = `SELECT * FROM registrations ORDER BY ${orderBy} ${sortOrder.toUpperCase()}`;
-    const result = await pool.query(query);
+    // 필터 조건 구성
+    let whereConditions = [];
+    let queryParams = [];
+    let paramIndex = 1;
+    
+    if (country) {
+      whereConditions.push(`country = $${paramIndex}`);
+      queryParams.push(country);
+      paramIndex++;
+    }
+    
+    if (monthWeek) {
+      whereConditions.push(`month_week_label = $${paramIndex}`);
+      queryParams.push(monthWeek);
+      paramIndex++;
+    }
+    
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    
+    const query = `
+      SELECT 
+        id,
+        full_name,
+        is_new_user,
+        gender,
+        phone,
+        email,
+        position,
+        organization,
+        contact_date,
+        contact_method,
+        contact_method_en,
+        contact_sub_method,
+        contact_sub_method_en,
+        contact_content,
+        country,
+        is_registered,
+        created_at,
+        updated_at,
+        month_week_label
+      FROM registrations
+      ${whereClause}
+      ORDER BY ${orderBy} ${sortOrder.toUpperCase()}
+    `;
+    
+    const result = await pool.query(query, queryParams);
     return res.json(result.rows);
   } catch (error) {
     console.error('GET 요청 오류:', error);
@@ -175,8 +222,8 @@ async function handlePost(req, res) {
     const query = `
       INSERT INTO registrations 
       (full_name, is_new_user, gender, phone, email, position, organization, 
-       contact_date, contact_method, contact_method_en, contact_sub_method, contact_sub_method_en, contact_content, is_registered)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       contact_date, contact_method, contact_method_en, contact_sub_method, contact_sub_method_en, contact_content, country, is_registered)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id
     `;
     
@@ -194,6 +241,7 @@ async function handlePost(req, res) {
       subMethodKo,
       subMethodEn,
       registration.contactContent || null,
+      registration.country || 'MN',
       false
     ];
     

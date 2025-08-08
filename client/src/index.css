@@ -402,6 +402,21 @@ textarea {
   top: 0;
   z-index: 10;
   text-align: center;
+  white-space: nowrap; /* Prevent line breaks in Korean headers */
+  min-width: 80px; /* Minimum width for headers */
+}
+
+.admin-table th .header-label .ko {
+  white-space: nowrap; /* Prevent Korean text from wrapping */
+  display: block;
+  font-weight: bold;
+}
+
+.admin-table th .header-label .en {
+  white-space: nowrap; /* Prevent English text from wrapping */
+  display: block;
+  font-size: 0.8em;
+  color: #666;
 }
 
 .admin-table th.active-sort {
@@ -453,7 +468,7 @@ textarea {
 
 /* 날짜 줄바꿈 방지 */
 .no-wrap {
-  white-space: nowrap;
+  white-space: nowrap; /* Prevent wrapping for dates */
 }
 
 /* 연락내용 셀: 줄임 표시 + 더보기 버튼 */
@@ -470,6 +485,31 @@ textarea {
 }
 .more-btn {
   margin-left: 8px;
+}
+
+.content-preview {
+  max-width: 200px; /* Adjust as needed */
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Show up to 2 lines */
+  -webkit-box-orient: vertical;
+  position: relative;
+  padding-right: 40px; /* Space for the button */
+}
+
+.content-preview .btn-more {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 2px 6px;
+  font-size: 0.7em;
+  cursor: pointer;
+  border-radius: 3px;
 }
 
 /* 모달 스타일 */
@@ -558,6 +598,120 @@ textarea {
   padding: 50px;
   font-size: 18px;
   color: #666;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 80%;
+  max-height: 80%;
+  overflow: auto;
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-body pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.en-text {
+  font-size: 0.85em;
+  color: #777;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Admin controls styling */
+.admin-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.filter-section {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.refresh-btn, .export-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.refresh-btn {
+  background: #28a745;
+  color: white;
+}
+
+.refresh-btn:hover {
+  background: #218838;
+}
+
+.export-btn {
+  background: #17a2b8;
+  color: white;
+}
+
+.export-btn:hover {
+  background: #138496;
 }
 
 @media (max-width: 768px) {
