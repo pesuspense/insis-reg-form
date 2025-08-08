@@ -14,6 +14,8 @@ const AdminPage = () => {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [adminAuthorized, setAdminAuthorized] = useState(false);
+  const [contentModal, setContentModal] = useState({ open: false, text: '', title: '' });
 
   // 데이터 로드
   const loadRegistrations = async () => {
@@ -62,6 +64,16 @@ const AdminPage = () => {
   // 등록 상태 변경
   const handleRegisterChange = async (id, isRegistered) => {
     try {
+      if (!adminAuthorized) {
+        const input = window.prompt('관리자 비밀번호를 입력하세요');
+        if (input !== '[!@light12]') {
+          setMessage({ type: 'error', text: '관리자 비밀번호가 올바르지 않습니다.' });
+          // 변경 취소를 위해 목록 재로드
+          loadRegistrations();
+          return;
+        }
+        setAdminAuthorized(true);
+      }
              await axios.patch(`${API_BASE_URL}/registrations/${id}/register`, { isRegistered });
              setMessage({ 
          type: 'success', 
@@ -146,6 +158,12 @@ const AdminPage = () => {
     </span>
   );
 
+  const openContentModal = (title, text) => {
+    setContentModal({ open: true, text: text || '-', title });
+  };
+
+  const closeContentModal = () => setContentModal({ open: false, text: '', title: '' });
+
   if (loading) {
     return <div className="loading">데이터를 불러오는 중...</div>;
   }
@@ -199,7 +217,7 @@ const AdminPage = () => {
           <thead>
             <tr>
               <SortableHeader field="fullName"><HeaderLabel ko="이름" en="Name" /></SortableHeader>
-              <SortableHeader field="contactDate"><HeaderLabel ko="날짜" en="Date" /></SortableHeader>
+              <SortableHeader field="contactDate"><span className="no-wrap"><HeaderLabel ko="날짜" en="Date" /></span></SortableHeader>
               <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
               <th><HeaderLabel ko="세부방법" en="Detail Method" /></th>
               <th><HeaderLabel ko="연락내용" en="Content" /></th>
@@ -298,11 +316,16 @@ const AdminPage = () => {
                   // 보기 모드
                   <>
                     <td>{registration.fullName}</td>
-                    <td>{format(parseISO(registration.contactDate), 'yyyy-MM-dd')}</td>
+                    <td className="no-wrap">{format(parseISO(registration.contactDate), 'yyyy-MM-dd')}</td>
                     <td>{registration.contactMethod}</td>
                     <td>{registration.contactSubMethod}</td>
                     <td className="content-cell">
-                      {registration.contactContent || '-'}
+                      <span className="content-text">{registration.contactContent || '-'}</span>
+                      {registration.contactContent && registration.contactContent.length > 0 && (
+                        <button type="button" className="btn btn-secondary btn-sm more-btn" onClick={() => openContentModal(`${registration.fullName} - 연락내용`, registration.contactContent)}>
+                          더보기
+                        </button>
+                      )}
                     </td>
                     <td>{registration.isNewUser ? '신규 (New)' : '기존 (Existing)'}</td>
                     <td>
@@ -327,6 +350,23 @@ const AdminPage = () => {
           </tbody>
         </table>
       </div>
+
+      {contentModal.open && (
+        <div className="modal-backdrop" onClick={closeContentModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">{contentModal.title}</h3>
+              <button className="modal-close" onClick={closeContentModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <pre className="modal-pre">{contentModal.text}</pre>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={closeContentModal}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="summary">
         <p>총 {registrations.length}개 항목 중 {registrations.filter(r => r.isRegistered).length}개 등록됨</p>
