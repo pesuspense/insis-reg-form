@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import API_BASE_URL from '../config';
 
 const RegistrationForm = () => {
@@ -330,12 +332,18 @@ const RegistrationForm = () => {
             {/* 날짜 선택 */}
             <div className="form-group">
               <label htmlFor={`contactDate-${index}`}>날짜 (Date) *</label>
-              <input
-                type="date"
+              <DatePicker
                 id={`contactDate-${index}`}
-                value={registration.contactDate}
-                onChange={(e) => updateRegistration(index, 'contactDate', e.target.value)}
+                selected={registration.contactDate ? new Date(registration.contactDate) : null}
+                onChange={(date) => updateRegistration(index, 'contactDate', date ? date.toISOString().split('T')[0] : '')}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="날짜를 선택하세요 (Select date)"
+                className="form-control"
                 required
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+                maxDate={new Date()}
               />
             </div>
 
