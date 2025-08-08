@@ -317,8 +317,25 @@ const AdminPage = () => {
                   <>
                     <td>{registration.fullName}</td>
                     <td className="no-wrap">{format(parseISO(registration.contactDate), 'yyyy-MM-dd')}</td>
-                    <td>{registration.contactMethod}</td>
-                    <td>{registration.contactSubMethod}</td>
+                    <td>
+                      <div className="header-label">
+                        <span className="ko">{registration.contactMethod}</span>
+                        <span className="en">{registration.contactMethod && (registration.contactMethod === '연락' ? 'Contact' : registration.contactMethod === '만남' ? 'Meeting' : registration.contactMethod)}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="header-label">
+                        <span className="ko">{registration.contactSubMethod}</span>
+                        <span className="en">{
+                          registration.contactSubMethod && (
+                            registration.contactSubMethod === '전화' ? 'Phone' :
+                            registration.contactSubMethod === '메신저' ? 'Messenger' :
+                            registration.contactSubMethod === '온라인' ? 'Online' :
+                            registration.contactSubMethod === '오프라인' ? 'Offline' : registration.contactSubMethod
+                          )
+                        }</span>
+                      </div>
+                    </td>
                     <td className="content-cell">
                       <span className="content-text">{registration.contactContent || '-'}</span>
                       {registration.contactContent && registration.contactContent.length > 0 && (
@@ -327,15 +344,21 @@ const AdminPage = () => {
                         </button>
                       )}
                     </td>
-                    <td>{registration.isNewUser ? '신규 (New)' : '기존 (Existing)'}</td>
+                    <td>
+                      <div className="header-label">
+                        <span className="ko">{registration.isNewUser ? '신규' : '기존'}</span>
+                        <span className="en">{registration.isNewUser ? 'New' : 'Existing'}</span>
+                      </div>
+                    </td>
                     <td>
                       <input
                         type="checkbox"
                         checked={registration.isRegistered}
                         onChange={(e) => handleRegisterChange(registration.id, e.target.checked)}
                       />
-                      <span className="status-text">
-                        {registration.isRegistered ? '등록됨 (Registered)' : '미등록 (Not Registered)'}
+                      <span className="status-text header-label">
+                        <span className="ko">{registration.isRegistered ? '등록됨' : '미등록'}</span>
+                        <span className="en">{registration.isRegistered ? 'Registered' : 'Not Registered'}</span>
                       </span>
                     </td>
                     <td>
