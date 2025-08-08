@@ -664,3 +664,25 @@ textarea {
   padding: 10px 20px;
   font-size: 14px;
 }
+
+/* 테이블 내 액션 버튼 스타일 */
+.admin-table .action-buttons {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.admin-table .action-buttons .btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  min-width: 60px;
+}
+
+.admin-table .action-buttons .btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.admin-table .action-buttons .btn-danger:hover {
+  background-color: #c82333;
+}

@@ -79,6 +79,8 @@ module.exports = async function handler(req, res) {
         return await handlePut(req, res);
       case 'PATCH':
         return await handlePatch(req, res);
+      case 'DELETE':
+        return await handleDelete(req, res);
       default:
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -309,4 +311,22 @@ async function handlePatch(req, res) {
   }
   
   return res.json({ message: '등록 상태가 업데이트되었습니다.' });
+}
+
+// DELETE: 등록 항목 삭제
+async function handleDelete(req, res) {
+  const { id } = req.query;
+  
+  const query = `
+    DELETE FROM registrations WHERE id = $1
+    RETURNING id
+  `;
+  
+  const result = await pool.query(query, [id]);
+  
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: '등록 항목을 찾을 수 없습니다.' });
+  }
+  
+  return res.json({ message: '항목이 삭제되었습니다.' });
 }

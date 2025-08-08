@@ -235,6 +235,29 @@ const AdminPage = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!adminAuthorized) {
+      const password = prompt('관리자 비밀번호를 입력하세요:');
+      if (password !== '[!@light12]') {
+        alert('비밀번호가 올바르지 않습니다.');
+        return;
+      }
+      setAdminAuthorized(true);
+    }
+
+    if (!confirm('정말로 이 항목을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_BASE_URL}/registrations/${id}`);
+      setMessage({ type: 'success', text: '항목이 삭제되었습니다.' });
+      loadRegistrations();
+    } catch (error) {
+      setMessage({ type: 'error', text: '삭제 중 오류가 발생했습니다.' });
+    }
+  };
+
   const exportToExcel = () => {
     const headers = [
       'ID', '이름', '국가', '성별', '전화번호', '이메일', '직책', '소속',
@@ -408,7 +431,6 @@ const AdminPage = () => {
                 <SortableHeader field="contactDate">
                    <span className="no-wrap">
                      <HeaderLabel ko="날짜" en="Date" />
-                     <span className="sort-arrow">▼</span>
                    </span>
                  </SortableHeader>
                 <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
@@ -547,10 +569,15 @@ const AdminPage = () => {
                       </span>
                     </td>
                     <td>
-                      <button onClick={() => openEditModal(registration)} className="btn btn-primary btn-sm">
-                        수정 (Edit)
-                      </button>
-                    </td>
+                       <div className="action-buttons">
+                         <button onClick={() => openEditModal(registration)} className="btn btn-primary btn-sm">
+                           수정 (Edit)
+                         </button>
+                         <button onClick={() => handleDelete(registration.id)} className="btn btn-danger btn-sm">
+                           삭제 (Delete)
+                         </button>
+                       </div>
+                     </td>
                   </>
                 )}
               </tr>
@@ -678,17 +705,6 @@ const AdminPage = () => {
                       className="edit-input"
                       rows="3"
                     />
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={editModal.data.isRegistered}
-                        onChange={(e) => updateEditModalData('isRegistered', e.target.checked)}
-                      />
-                      등록여부 (Registered)
-                    </label>
                   </div>
 
                   <div className="modal-actions">
