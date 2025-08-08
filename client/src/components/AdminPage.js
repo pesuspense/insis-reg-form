@@ -16,6 +16,7 @@ const AdminPage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [adminAuthorized, setAdminAuthorized] = useState(false);
   const [contentModal, setContentModal] = useState({ open: false, text: '', title: '' });
+  const [editModal, setEditModal] = useState({ open: false, data: null });
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedMonthWeek, setSelectedMonthWeek] = useState('');
   const [selectedContactMethod, setSelectedContactMethod] = useState('');
@@ -185,6 +186,55 @@ const AdminPage = () => {
     setContentModal({ open: false, text: '', title: '' });
   };
 
+  const openEditModal = (registration) => {
+    setEditModal({ 
+      open: true, 
+      data: {
+        ...registration,
+        contactDate: new Date(registration.contactDate)
+      }
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditModal({ open: false, data: null });
+  };
+
+  const updateEditModalData = (field, value) => {
+    setEditModal(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        [field]: value
+      }
+    }));
+  };
+
+  const saveEditModal = async () => {
+    try {
+      const updateData = {
+        ...editModal.data,
+        contactDate: format(editModal.data.contactDate, 'yyyy-MM-dd')
+      };
+      
+      await axios.put(`${API_BASE_URL}/registrations/${editModal.data.id}`, updateData);
+      setMessage({ 
+        type: 'success', 
+        text: '✅ 수정이 완료되었습니다! / Edit completed successfully!' 
+      });
+      
+      // 3초 후 성공 메시지 자동 제거
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 3000);
+      
+      closeEditModal();
+      loadRegistrations();
+    } catch (error) {
+      setMessage({ type: 'error', text: '수정 중 오류가 발생했습니다.' });
+    }
+  };
+
   const exportToExcel = () => {
     const headers = [
       'ID', '이름', '국가', '성별', '전화번호', '이메일', '직책', '소속',
@@ -264,8 +314,8 @@ const AdminPage = () => {
     <th onClick={() => handleSort(field)} style={{ cursor: 'pointer' }}>
       {children}
       {sortBy === field && (
-        <span style={{ marginLeft: '5px' }}>
-          {sortOrder === 'ASC' ? '↑' : '↓'}
+        <span className="sort-arrow" style={{ marginLeft: '5px' }}>
+          {sortOrder === 'ASC' ? '▲' : '▼'}
         </span>
       )}
     </th>
@@ -355,7 +405,12 @@ const AdminPage = () => {
                 <th><HeaderLabel ko="월/주차" en="Month/Week" /></th>
                 <SortableHeader field="fullName"><HeaderLabel ko="이름" en="Name" /></SortableHeader>
                 <SortableHeader field="country"><HeaderLabel ko="국가" en="Country" /></SortableHeader>
-                <SortableHeader field="contactDate"><span className="no-wrap"><HeaderLabel ko="날짜" en="Date" /></span></SortableHeader>
+                <SortableHeader field="contactDate">
+                   <span className="no-wrap">
+                     <HeaderLabel ko="날짜" en="Date" />
+                     <span className="sort-arrow">▼</span>
+                   </span>
+                 </SortableHeader>
                 <SortableHeader field="contactMethod"><HeaderLabel ko="연락방법" en="Contact Method" /></SortableHeader>
                 <th><HeaderLabel ko="세부방법" en="Detail Method" /></th>
                 <th><HeaderLabel ko="연락내용" en="Content" /></th>
@@ -492,7 +547,7 @@ const AdminPage = () => {
                       </span>
                     </td>
                     <td>
-                      <button onClick={() => startEdit(registration)} className="btn btn-primary btn-sm">
+                      <button onClick={() => openEditModal(registration)} className="btn btn-primary btn-sm">
                         수정 (Edit)
                       </button>
                     </td>
@@ -514,6 +569,138 @@ const AdminPage = () => {
             </div>
             <div className="modal-body">
               <pre>{contentModal.text}</pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModal.open && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-content edit-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>수정 (Edit)</h3>
+              <button onClick={closeEditModal} className="close-btn">&times;</button>
+            </div>
+            <div className="modal-body">
+              {editModal.data && (
+                <div className="edit-form">
+                  <div className="form-row">
+                    <div className="form-col">
+                      <label>이름 (Name) *</label>
+                      <input
+                        type="text"
+                        value={editModal.data.fullName}
+                        onChange={(e) => updateEditModalData('fullName', e.target.value)}
+                        className="edit-input"
+                      />
+                    </div>
+                    <div className="form-col">
+                      <label>국가 (Country) *</label>
+                      <select
+                        value={editModal.data.country}
+                        onChange={(e) => updateEditModalData('country', e.target.value)}
+                        className="edit-input"
+                      >
+                        {countries.filter(c => c.code).map(country => (
+                          <option key={country.code} value={country.code}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-col">
+                      <label>날짜 (Date) *</label>
+                      <DatePicker
+                        selected={editModal.data.contactDate}
+                        onChange={(date) => updateEditModalData('contactDate', date)}
+                        dateFormat="yyyy-MM-dd"
+                        className="edit-input"
+                        maxDate={new Date()}
+                      />
+                    </div>
+                    <div className="form-col">
+                      <label>연락방법 (Contact Method) *</label>
+                      <select
+                        value={editModal.data.contactMethod}
+                        onChange={(e) => updateEditModalData('contactMethod', e.target.value)}
+                        className="edit-input"
+                      >
+                        <option value="">선택하세요</option>
+                        <option value="연락">연락 (Contact)</option>
+                        <option value="만남">만남 (Meeting)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-col">
+                      <label>세부방법 (Detail Method) *</label>
+                      <select
+                        value={editModal.data.contactSubMethod}
+                        onChange={(e) => updateEditModalData('contactSubMethod', e.target.value)}
+                        className="edit-input"
+                      >
+                        <option value="">선택하세요</option>
+                        {editModal.data.contactMethod === '연락' ? (
+                          <>
+                            <option value="전화">전화 (Phone)</option>
+                            <option value="메신저">메신저 (Messenger)</option>
+                          </>
+                        ) : editModal.data.contactMethod === '만남' ? (
+                          <>
+                            <option value="온라인">온라인 (Online)</option>
+                            <option value="오프라인">오프라인 (Offline)</option>
+                          </>
+                        ) : null}
+                      </select>
+                    </div>
+                    <div className="form-col">
+                      <label>사용자 유형 (User Type) *</label>
+                      <select
+                        value={editModal.data.isNewUser ? 'new' : 'existing'}
+                        onChange={(e) => updateEditModalData('isNewUser', e.target.value === 'new')}
+                        className="edit-input"
+                      >
+                        <option value="existing">기존 (Existing)</option>
+                        <option value="new">신규 (New)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>연락내용 (Contact Content)</label>
+                    <textarea
+                      value={editModal.data.contactContent || ''}
+                      onChange={(e) => updateEditModalData('contactContent', e.target.value)}
+                      className="edit-input"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={editModal.data.isRegistered}
+                        onChange={(e) => updateEditModalData('isRegistered', e.target.checked)}
+                      />
+                      등록여부 (Registered)
+                    </label>
+                  </div>
+
+                  <div className="modal-actions">
+                    <button onClick={saveEditModal} className="btn btn-success">
+                      저장 (Save)
+                    </button>
+                    <button onClick={closeEditModal} className="btn btn-secondary">
+                      취소 (Cancel)
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -598,3 +598,69 @@ textarea {
     padding: 15px;
   }
 }
+
+/* 정렬 화살표 스타일 */
+.sort-arrow {
+  font-size: 12px;
+  color: #007bff;
+  font-weight: bold;
+}
+
+/* 수정 모달 스타일 */
+.edit-modal {
+  max-width: 800px;
+  width: 90%;
+}
+
+.edit-form {
+  padding: 20px 0;
+}
+
+.edit-form .form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.edit-form .form-col {
+  flex: 1;
+}
+
+.edit-form .form-group {
+  margin-bottom: 20px;
+}
+
+.edit-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #555;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.modal-actions .btn {
+  padding: 10px 20px;
+  font-size: 14px;
+}
