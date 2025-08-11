@@ -736,7 +736,7 @@ const AdminPage = () => {
                             value={editModal.data.phone || ''}
                             onChange={(e) => updateEditModalData('phone', e.target.value)}
                             className="edit-input"
-                            placeholder="전화번호를 입력하세요"
+                            placeholder="+82-10-1234-5678 or +1-555-123-4567"
                           />
                         </div>
                       </div>

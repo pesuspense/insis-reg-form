@@ -288,7 +288,7 @@ const RegistrationForm = () => {
                     id={`phone-${index}`}
                     value={registration.phone}
                     onChange={(e) => updateRegistration(index, 'phone', e.target.value)}
-                    placeholder="010-1234-5678"
+                    placeholder="+82-10-1234-5678 or +1-555-123-4567"
                     required
                   />
                 </div>
