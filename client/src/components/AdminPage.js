@@ -196,10 +196,17 @@ const AdminPage = () => {
 
   const openContentModal = (text, title) => {
     setContentModal({ open: true, text, title });
+    // 모달 열 때 번역 상태 초기화
+    setTranslatedText('');
+    setIsTranslating(false);
+    setSelectedLanguage('ko'); // 기본값을 한국어로 설정
   };
 
   const closeContentModal = () => {
     setContentModal({ open: false, text: '', title: '' });
+    // 모달 닫을 때 번역 상태 정리
+    setTranslatedText('');
+    setIsTranslating(false);
   };
 
   const copyToClipboard = async (text) => {
@@ -235,26 +242,25 @@ const AdminPage = () => {
   const translateText = async (text, targetLang) => {
     if (!text || text.trim() === '') return;
     
-    // 한국어 선택 시 원본 텍스트를 그대로 표시
-    if (targetLang === 'ko') {
-      setTranslatedText(text);
-      setMessage({ type: 'success', text: '원본 한국어 텍스트가 표시되었습니다.' });
-      setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, 3000);
-      return;
-    }
+    console.log('번역 요청:', { text: text.substring(0, 50) + '...', targetLang });
     
     setIsTranslating(true);
     setTranslatedText('');
     
     try {
+      // 원본 텍스트의 언어를 감지 (간단한 방법)
+      const isKorean = /[가-힣]/.test(text);
+      const sourceLang = isKorean ? 'ko' : 'en';
+      
+      console.log('언어 감지 결과:', { sourceLang, targetLang, isKorean });
+      
       // 무료 번역 API 사용 (MyMemory Translation API)
       const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|${targetLang}`
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
       );
       
       const data = await response.json();
+      console.log('번역 API 응답:', data);
       
       if (data.responseStatus === 200 && data.responseData) {
         setTranslatedText(data.responseData.translatedText);
@@ -729,7 +735,7 @@ const AdminPage = () => {
                 
                 {translatedText && (
                   <div className="translated-content">
-                    <h4>번역된 텍스트 (Translated Text)</h4>
+                    <h4>번역 결과 (Translation Result)</h4>
                     <pre>{translatedText}</pre>
                     <button
                       onClick={copyTranslatedText}
