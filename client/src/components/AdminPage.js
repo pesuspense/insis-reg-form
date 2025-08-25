@@ -199,6 +199,36 @@ const AdminPage = () => {
     setContentModal({ open: false, text: '', title: '' });
   };
 
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMessage({ type: 'success', text: '텍스트가 클립보드에 복사되었습니다.' });
+      // 3초 후 성공 메시지 자동 제거
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 3000);
+    } catch (err) {
+      // fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setMessage({ type: 'success', text: '텍스트가 클립보드에 복사되었습니다.' });
+        setTimeout(() => {
+          setMessage({ type: '', text: '' });
+        }, 3000);
+      } catch (err) {
+        setMessage({ type: 'error', text: '복사에 실패했습니다.' });
+        setTimeout(() => {
+          setMessage({ type: '', text: '' });
+        }, 3000);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   const openEditModal = (registration) => {
     setEditModal({ 
       open: true, 
@@ -612,6 +642,14 @@ const AdminPage = () => {
             </div>
             <div className="modal-body">
               <pre>{contentModal.text}</pre>
+            </div>
+            <div className="modal-footer">
+              <button 
+                onClick={() => copyToClipboard(contentModal.text)} 
+                className="btn btn-primary copy-btn"
+              >
+                📋 복사하기 (Copy)
+              </button>
             </div>
           </div>
         </div>
