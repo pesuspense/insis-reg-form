@@ -23,7 +23,7 @@ const AdminPage = () => {
   const [monthWeekOptions, setMonthWeekOptions] = useState([]);
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedLanguage, setSelectedLanguage] = useState('ko');
 
   const countries = [
     { code: '', name: '전체' },
@@ -234,6 +234,16 @@ const AdminPage = () => {
 
   const translateText = async (text, targetLang) => {
     if (!text || text.trim() === '') return;
+    
+    // 한국어 선택 시 원본 텍스트를 그대로 표시
+    if (targetLang === 'ko') {
+      setTranslatedText(text);
+      setMessage({ type: 'success', text: '원본 한국어 텍스트가 표시되었습니다.' });
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 3000);
+      return;
+    }
     
     setIsTranslating(true);
     setTranslatedText('');
@@ -698,6 +708,7 @@ const AdminPage = () => {
                     onChange={(e) => setSelectedLanguage(e.target.value)}
                     className="language-select"
                   >
+                    <option value="ko">한국어 (Korean)</option>
                     <option value="en">영어 (English)</option>
                     <option value="ja">일본어 (Japanese)</option>
                     <option value="zh">중국어 (Chinese)</option>
