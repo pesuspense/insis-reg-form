@@ -21,6 +21,9 @@ const AdminPage = () => {
   const [selectedMonthWeek, setSelectedMonthWeek] = useState('');
   const [selectedContactMethod, setSelectedContactMethod] = useState('');
   const [monthWeekOptions, setMonthWeekOptions] = useState([]);
+  const [translatedText, setTranslatedText] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
   const countries = [
     { code: '', name: '전체' },
@@ -226,6 +229,46 @@ const AdminPage = () => {
         }, 3000);
       }
       document.body.removeChild(textArea);
+    }
+  };
+
+  const translateText = async (text, targetLang) => {
+    if (!text || text.trim() === '') return;
+    
+    setIsTranslating(true);
+    setTranslatedText('');
+    
+    try {
+      // 무료 번역 API 사용 (MyMemory Translation API)
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|${targetLang}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.responseStatus === 200 && data.responseData) {
+        setTranslatedText(data.responseData.translatedText);
+        setMessage({ type: 'success', text: '번역이 완료되었습니다.' });
+        setTimeout(() => {
+          setMessage({ type: '', text: '' });
+        }, 3000);
+      } else {
+        throw new Error('번역에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      setMessage({ type: 'error', text: '번역 중 오류가 발생했습니다.' });
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 3000);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const copyTranslatedText = async () => {
+    if (translatedText) {
+      await copyToClipboard(translatedText);
     }
   };
 
@@ -641,14 +684,58 @@ const AdminPage = () => {
               <button onClick={closeContentModal} className="close-btn">&times;</button>
             </div>
             <div className="modal-body">
-              <pre>{contentModal.text}</pre>
+              <div className="content-section">
+                <h4>원본 텍스트 (Original Text)</h4>
+                <pre>{contentModal.text}</pre>
+              </div>
+              
+              <div className="translation-section">
+                <div className="translation-controls">
+                  <label htmlFor="language-select">번역 언어 (Target Language):</label>
+                  <select
+                    id="language-select"
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="language-select"
+                  >
+                    <option value="en">영어 (English)</option>
+                    <option value="ja">일본어 (Japanese)</option>
+                    <option value="zh">중국어 (Chinese)</option>
+                    <option value="es">스페인어 (Spanish)</option>
+                    <option value="fr">프랑스어 (French)</option>
+                    <option value="de">독일어 (German)</option>
+                    <option value="ru">러시아어 (Russian)</option>
+                    <option value="ar">아랍어 (Arabic)</option>
+                  </select>
+                  <button
+                    onClick={() => translateText(contentModal.text, selectedLanguage)}
+                    disabled={isTranslating}
+                    className="btn btn-primary translate-btn"
+                  >
+                    {isTranslating ? '번역 중...' : '🌐 번역하기'}
+                  </button>
+                </div>
+                
+                {translatedText && (
+                  <div className="translated-content">
+                    <h4>번역된 텍스트 (Translated Text)</h4>
+                    <pre>{translatedText}</pre>
+                    <button
+                      onClick={copyTranslatedText}
+                      className="btn btn-success copy-translated-btn"
+                    >
+                      📋 번역본 복사 (Copy Translation)
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="modal-footer">
               <button 
                 onClick={() => copyToClipboard(contentModal.text)} 
                 className="btn btn-primary copy-btn"
               >
-                📋 복사하기 (Copy)
+                📋 원본 복사 (Copy Original)
               </button>
             </div>
           </div>
