@@ -408,14 +408,14 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.api-warning {
+.api-info {
   margin-top: 8px;
   padding: 8px 12px;
-  background-color: #fff3cd;
-  border: 1px solid #ffeaa7;
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
   border-radius: 4px;
   font-size: 12px;
-  color: #856404;
+  color: #0c5460;
   line-height: 1.4;
 }
 

@@ -24,7 +24,7 @@ const AdminPage = () => {
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('ko');
-  const [translationMethod, setTranslationMethod] = useState('mymemory'); // 'mymemory' or 'chatgpt'
+  const [translationMethod, setTranslationMethod] = useState('chatgpt'); // 'mymemory' or 'chatgpt' - ChatGPT 기본값
 
   const countries = [
     { code: '', name: '전체' },
@@ -201,6 +201,7 @@ const AdminPage = () => {
     setTranslatedText('');
     setIsTranslating(false);
     setSelectedLanguage('ko'); // 기본값을 한국어로 설정
+    setTranslationMethod('chatgpt'); // ChatGPT를 기본값으로 설정
   };
 
   const closeContentModal = () => {
@@ -901,12 +902,12 @@ const AdminPage = () => {
                       onChange={(e) => setTranslationMethod(e.target.value)}
                       className="method-select"
                     >
+                      <option value="chatgpt">ChatGPT (고품질, 기본값)</option>
                       <option value="mymemory">MyMemory (무료, 500자 제한)</option>
-                      <option value="chatgpt">ChatGPT (고품질, API 키 + 결제 필요)</option>
                     </select>
                     {translationMethod === 'chatgpt' && (
-                      <div className="api-warning">
-                        ⚠️ ChatGPT API는 결제 정보 등록이 필요합니다. 할당량 초과 시 자동으로 MyMemory로 전환됩니다.
+                      <div className="api-info">
+                        ✅ ChatGPT API가 기본값으로 설정되었습니다. 오류 발생 시 자동으로 MyMemory로 전환됩니다.
                       </div>
                     )}
                   </div>

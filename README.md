@@ -204,8 +204,8 @@ GET /api/registrations?sortBy=createdAt&sortOrder=desc
    - 프로덕션 환경: Vercel 대시보드에서 환경변수 추가
 
 3. **번역 서비스 선택**
-   - MyMemory: 무료, 500자 제한 (기본값)
-   - ChatGPT: 고품질, API 키 필요, 비용 발생
+   - ChatGPT: 고품질, API 키 필요, 기본값 (오류 시 MyMemory로 자동 전환)
+   - MyMemory: 무료, 500자 제한 (fallback 옵션)
 
 ## 라이선스
 
