@@ -24,6 +24,7 @@ const AdminPage = () => {
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('ko');
+  const [translationMethod, setTranslationMethod] = useState('mymemory'); // 'mymemory' or 'chatgpt'
 
   const countries = [
     { code: '', name: '전체' },
@@ -271,18 +272,78 @@ const AdminPage = () => {
     return chunks;
   };
 
-  // 단일 청크 번역 함수 (MyMemory API 사용)
-  const translateChunk = async (chunk, sourceLang, targetLang) => {
-    const response = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`
-    );
+  // ChatGPT API를 사용한 번역 함수
+  const translateWithChatGPT = async (text, sourceLang, targetLang) => {
+    const API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
+    
+    if (!API_KEY) {
+      throw new Error('OpenAI API 키가 설정되지 않았습니다. 환경변수 REACT_APP_OPENAI_API_KEY를 설정해주세요.');
+    }
+    
+    const languageNames = {
+      'ko': 'Korean',
+      'en': 'English', 
+      'ja': 'Japanese',
+      'zh': 'Chinese',
+      'es': 'Spanish',
+      'fr': 'French',
+      'de': 'German',
+      'ru': 'Russian',
+      'ar': 'Arabic'
+    };
+    
+    const sourceLanguageName = languageNames[sourceLang] || sourceLang;
+    const targetLanguageName = languageNames[targetLang] || targetLang;
+    
+    const prompt = `Please translate the following text from ${sourceLanguageName} to ${targetLanguageName}. 
+    Only return the translated text without any explanations or additional text:
+    
+    "${text}"`;
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.3
+      })
+    });
     
     const data = await response.json();
     
-    if (data.responseStatus === 200 && data.responseData) {
-      return data.responseData.translatedText;
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content.trim();
     } else {
-      throw new Error(`청크 번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+      throw new Error(`ChatGPT 번역 실패: ${data.error?.message || '알 수 없는 오류'}`);
+    }
+  };
+
+  // 단일 청크 번역 함수
+  const translateChunk = async (chunk, sourceLang, targetLang, method = 'mymemory') => {
+    if (method === 'chatgpt') {
+      return await translateWithChatGPT(chunk, sourceLang, targetLang);
+    } else {
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.responseStatus === 200 && data.responseData) {
+        return data.responseData.translatedText;
+      } else {
+        throw new Error(`청크 번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+      }
     }
   };
 
@@ -319,7 +380,7 @@ const AdminPage = () => {
           console.log(`청크 ${i + 1}/${chunks.length} 번역 중... (${chunk.length}자)`);
           
           try {
-            const translatedChunk = await translateChunk(chunk, sourceLang, targetLang);
+            const translatedChunk = await translateChunk(chunk, sourceLang, targetLang, translationMethod);
             translatedChunks.push(translatedChunk);
             
             // 진행률 표시
@@ -340,22 +401,29 @@ const AdminPage = () => {
         
         const finalTranslation = translatedChunks.join(' ');
         setTranslatedText(finalTranslation);
-        setMessage({ type: 'success', text: `번역이 완료되었습니다. (${chunks.length}개 청크 처리)` });
+        const serviceName = translationMethod === 'chatgpt' ? 'ChatGPT' : 'MyMemory';
+        setMessage({ type: 'success', text: `번역이 완료되었습니다. (${serviceName}, ${chunks.length}개 청크 처리)` });
         
       } else {
-        // 짧은 텍스트는 MyMemory API로 번역
-        const response = await fetch(
-          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
-        );
-        
-        const data = await response.json();
-        console.log('번역 API 응답:', data);
-        
-        if (data.responseStatus === 200 && data.responseData) {
-          setTranslatedText(data.responseData.translatedText);
-          setMessage({ type: 'success', text: '번역이 완료되었습니다.' });
+        // 짧은 텍스트는 선택된 방법으로 번역
+        if (translationMethod === 'chatgpt') {
+          const translatedText = await translateWithChatGPT(text, sourceLang, targetLang);
+          setTranslatedText(translatedText);
+          setMessage({ type: 'success', text: '번역이 완료되었습니다. (ChatGPT)' });
         } else {
-          throw new Error(`번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+          const response = await fetch(
+            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
+          );
+          
+          const data = await response.json();
+          console.log('번역 API 응답:', data);
+          
+          if (data.responseStatus === 200 && data.responseData) {
+            setTranslatedText(data.responseData.translatedText);
+            setMessage({ type: 'success', text: '번역이 완료되었습니다. (MyMemory)' });
+          } else {
+            throw new Error(`번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+          }
         }
       }
       
@@ -810,6 +878,19 @@ const AdminPage = () => {
                 </div>
                 <div className="translation-controls">
                   <div className="control-group">
+                    <label htmlFor="translation-method">번역 서비스 (Translation Service):</label>
+                    <select
+                      id="translation-method"
+                      value={translationMethod}
+                      onChange={(e) => setTranslationMethod(e.target.value)}
+                      className="method-select"
+                    >
+                      <option value="mymemory">MyMemory (무료, 500자 제한)</option>
+                      <option value="chatgpt">ChatGPT (고품질, API 키 필요)</option>
+                    </select>
+                  </div>
+                  
+                  <div className="control-group">
                     <label htmlFor="language-select">번역 언어 (Target Language):</label>
                     <select
                       id="language-select"
@@ -834,7 +915,7 @@ const AdminPage = () => {
                     disabled={isTranslating}
                     className="btn btn-primary translate-btn"
                   >
-                    {isTranslating ? '번역 중...' : '🌐 번역하기 (MyMemory)'}
+                    {isTranslating ? '번역 중...' : `🌐 번역하기 (${translationMethod === 'chatgpt' ? 'ChatGPT' : 'MyMemory'})`}
                   </button>
                 </div>
                 

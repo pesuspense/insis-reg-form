@@ -187,9 +187,25 @@ GET /api/registrations?sortBy=createdAt&sortOrder=desc
 
 ### 개발 환경
 - `DATABASE_URL`: Supabase PostgreSQL 연결 문자열
+- `REACT_APP_OPENAI_API_KEY`: OpenAI API 키 (ChatGPT 번역 기능용, 선택사항)
 
 ### 프로덕션 환경 (Vercel)
 - `DATABASE_URL`: Supabase PostgreSQL 연결 문자열
+- `REACT_APP_OPENAI_API_KEY`: OpenAI API 키 (ChatGPT 번역 기능용, 선택사항)
+
+### ChatGPT 번역 기능 설정 (선택사항)
+
+1. **OpenAI API 키 발급**
+   - [OpenAI Platform](https://platform.openai.com/api-keys)에서 API 키 생성
+   - 계정에 충분한 크레딧이 있는지 확인
+
+2. **환경변수 설정**
+   - 개발 환경: `client/.env` 파일에 `REACT_APP_OPENAI_API_KEY=your_api_key_here` 추가
+   - 프로덕션 환경: Vercel 대시보드에서 환경변수 추가
+
+3. **번역 서비스 선택**
+   - MyMemory: 무료, 500자 제한 (기본값)
+   - ChatGPT: 고품질, API 키 필요, 비용 발생
 
 ## 라이선스
 
