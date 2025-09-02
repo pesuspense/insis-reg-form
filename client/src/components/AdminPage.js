@@ -310,7 +310,7 @@ const AdminPage = () => {
         'Authorization': `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-5',
         messages: [
           {
             role: 'system',
@@ -910,12 +910,12 @@ const AdminPage = () => {
                       onChange={(e) => setTranslationMethod(e.target.value)}
                       className="method-select"
                     >
-                      <option value="chatgpt">ChatGPT-4o (청년정책 전문가, 기본값)</option>
+                      <option value="chatgpt">ChatGPT-5 (청년정책 전문가, 기본값)</option>
                       <option value="mymemory">MyMemory (무료, 500자 제한)</option>
                     </select>
                     {translationMethod === 'chatgpt' && (
                       <div className="api-info">
-                        ✅ ChatGPT-4o (청년정책 전문가)가 기본값으로 설정되었습니다. 국제정세와 청년정책 맥락을 이해한 고품질 번역을 제공합니다.
+                        ✅ ChatGPT-5 (청년정책 전문가)가 기본값으로 설정되었습니다. 국제정세와 청년정책 맥락을 이해한 최고품질 번역을 제공합니다.
                       </div>
                     )}
                   </div>

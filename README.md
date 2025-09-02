@@ -197,17 +197,17 @@ GET /api/registrations?sortBy=createdAt&sortOrder=desc
 
 1. **OpenAI API 키 발급**
    - [OpenAI Platform](https://platform.openai.com/api-keys)에서 API 키 생성
-   - 계정에 충분한 크레딧이 있는지 확인 (GPT-4o 사용 권장)
+   - 계정에 충분한 크레딧이 있는지 확인 (GPT-5 사용 권장)
 
 2. **환경변수 설정**
    - 개발 환경: `client/.env` 파일에 `REACT_APP_OPENAI_API_KEY=your_api_key_here` 추가
    - 프로덕션 환경: Vercel 대시보드에서 환경변수 추가
 
 3. **번역 서비스 선택**
-   - ChatGPT-4o: 청년정책 전문가 모델, 고품질, API 키 필요, 기본값 (오류 시 MyMemory로 자동 전환)
+   - ChatGPT-5: 청년정책 전문가 모델, 최고품질, API 키 필요, 기본값 (오류 시 MyMemory로 자동 전환)
    - MyMemory: 무료, 500자 제한 (fallback 옵션)
 
-4. **ChatGPT-4o 전문가 모델 특징**
+4. **ChatGPT-5 전문가 모델 특징**
    - 청년정책 전문가 컨셉 적용
    - 국제정세, 정치, 사회, 문화, 역사, 종교 분야 전문성
    - 유럽 중심의 청년정책 맥락 이해
