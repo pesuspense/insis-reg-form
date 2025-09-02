@@ -24,6 +24,7 @@ const AdminPage = () => {
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('ko');
+  const [translationMethod, setTranslationMethod] = useState('mymemory'); // 'mymemory' or 'google'
 
   const countries = [
     { code: '', name: '전체' },
@@ -239,10 +240,100 @@ const AdminPage = () => {
     }
   };
 
+  // 텍스트를 청크로 나누는 함수
+  const splitTextIntoChunks = (text, maxLength = 400) => {
+    if (text.length <= maxLength) {
+      return [text];
+    }
+    
+    const chunks = [];
+    let currentChunk = '';
+    const sentences = text.split(/[.!?]\s+/);
+    
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length <= maxLength) {
+        currentChunk += (currentChunk ? '. ' : '') + sentence;
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk + '.');
+          currentChunk = sentence;
+        } else {
+          // 문장이 너무 긴 경우 강제로 자르기
+          chunks.push(sentence.substring(0, maxLength));
+          currentChunk = sentence.substring(maxLength);
+        }
+      }
+    }
+    
+    if (currentChunk) {
+      chunks.push(currentChunk);
+    }
+    
+    return chunks;
+  };
+
+  // Google Translate API를 사용한 번역 함수
+  const translateWithGoogle = async (text, sourceLang, targetLang) => {
+    // Google Translate API는 API 키가 필요하므로 여기서는 예시만 제공
+    // 실제 사용시에는 환경변수나 설정에서 API 키를 가져와야 합니다
+    const API_KEY = process.env.REACT_APP_GOOGLE_TRANSLATE_API_KEY;
+    
+    if (!API_KEY) {
+      throw new Error('Google Translate API 키가 설정되지 않았습니다. MyMemory API를 사용합니다.');
+    }
+    
+    const response = await fetch(
+      `https://translation.googleapis.com/language/translate/v2?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: text,
+          source: sourceLang,
+          target: targetLang,
+          format: 'text'
+        })
+      }
+    );
+    
+    const data = await response.json();
+    
+    if (data.data && data.data.translations && data.data.translations[0]) {
+      return data.data.translations[0].translatedText;
+    } else {
+      throw new Error(`Google 번역 실패: ${data.error?.message || '알 수 없는 오류'}`);
+    }
+  };
+
+  // 단일 청크 번역 함수
+  const translateChunk = async (chunk, sourceLang, targetLang, method = 'mymemory') => {
+    if (method === 'google') {
+      return await translateWithGoogle(chunk, sourceLang, targetLang);
+    } else {
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.responseStatus === 200 && data.responseData) {
+        return data.responseData.translatedText;
+      } else {
+        throw new Error(`청크 번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+      }
+    }
+  };
+
   const translateText = async (text, targetLang) => {
     if (!text || text.trim() === '') return;
     
-    console.log('번역 요청:', { text: text.substring(0, 50) + '...', targetLang });
+    console.log('번역 요청:', { 
+      textLength: text.length, 
+      textPreview: text.substring(0, 50) + '...', 
+      targetLang 
+    });
     
     setIsTranslating(true);
     setTranslatedText('');
@@ -254,29 +345,76 @@ const AdminPage = () => {
       
       console.log('언어 감지 결과:', { sourceLang, targetLang, isKorean });
       
-      // 무료 번역 API 사용 (MyMemory Translation API)
-      const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
-      );
-      
-      const data = await response.json();
-      console.log('번역 API 응답:', data);
-      
-      if (data.responseStatus === 200 && data.responseData) {
-        setTranslatedText(data.responseData.translatedText);
-        setMessage({ type: 'success', text: '번역이 완료되었습니다.' });
-        setTimeout(() => {
-          setMessage({ type: '', text: '' });
-        }, 3000);
+      // 텍스트가 500자 이상인 경우 청크로 나누어 번역
+      if (text.length > 500) {
+        setMessage({ type: 'info', text: '긴 텍스트를 청크 단위로 번역 중입니다...' });
+        
+        const chunks = splitTextIntoChunks(text, 400);
+        console.log(`텍스트를 ${chunks.length}개 청크로 분할:`, chunks.map(c => c.length));
+        
+        const translatedChunks = [];
+        
+        for (let i = 0; i < chunks.length; i++) {
+          const chunk = chunks[i];
+          console.log(`청크 ${i + 1}/${chunks.length} 번역 중... (${chunk.length}자)`);
+          
+          try {
+            const translatedChunk = await translateChunk(chunk, sourceLang, targetLang, translationMethod);
+            translatedChunks.push(translatedChunk);
+            
+            // 진행률 표시
+            setMessage({ 
+              type: 'info', 
+              text: `번역 진행 중... ${i + 1}/${chunks.length} (${Math.round(((i + 1) / chunks.length) * 100)}%)` 
+            });
+            
+            // API 호출 간격 조절 (무료 API 제한 고려)
+            if (i < chunks.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          } catch (chunkError) {
+            console.error(`청크 ${i + 1} 번역 실패:`, chunkError);
+            translatedChunks.push(`[번역 실패: ${chunk.substring(0, 50)}...]`);
+          }
+        }
+        
+        const finalTranslation = translatedChunks.join(' ');
+        setTranslatedText(finalTranslation);
+        setMessage({ type: 'success', text: `번역이 완료되었습니다. (${chunks.length}개 청크 처리)` });
+        
       } else {
-        throw new Error('번역에 실패했습니다.');
+        // 짧은 텍스트는 선택된 방법으로 번역
+        if (translationMethod === 'google') {
+          const translatedText = await translateWithGoogle(text, sourceLang, targetLang);
+          setTranslatedText(translatedText);
+          setMessage({ type: 'success', text: '번역이 완료되었습니다. (Google Translate)' });
+        } else {
+          const response = await fetch(
+            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
+          );
+          
+          const data = await response.json();
+          console.log('번역 API 응답:', data);
+          
+          if (data.responseStatus === 200 && data.responseData) {
+            setTranslatedText(data.responseData.translatedText);
+            setMessage({ type: 'success', text: '번역이 완료되었습니다. (MyMemory)' });
+          } else {
+            throw new Error(`번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+          }
+        }
       }
-    } catch (error) {
-      console.error('Translation error:', error);
-      setMessage({ type: 'error', text: '번역 중 오류가 발생했습니다.' });
+      
       setTimeout(() => {
         setMessage({ type: '', text: '' });
-      }, 3000);
+      }, 5000);
+      
+    } catch (error) {
+      console.error('Translation error:', error);
+      setMessage({ type: 'error', text: `번역 중 오류가 발생했습니다: ${error.message}` });
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 5000);
     } finally {
       setIsTranslating(false);
     }
@@ -706,24 +844,50 @@ const AdminPage = () => {
               </div>
               
               <div className="translation-section">
+                <div className="translation-info">
+                  <div className="text-stats">
+                    <span className="text-length">텍스트 길이: {contentModal.text.length}자</span>
+                    {contentModal.text.length > 500 && (
+                      <span className="chunk-info">
+                        (긴 텍스트는 자동으로 청크 단위로 분할하여 번역됩니다)
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <div className="translation-controls">
-                  <label htmlFor="language-select">번역 언어 (Target Language):</label>
-                  <select
-                    id="language-select"
-                    value={selectedLanguage}
-                    onChange={(e) => setSelectedLanguage(e.target.value)}
-                    className="language-select"
-                  >
-                    <option value="ko">한국어 (Korean)</option>
-                    <option value="en">영어 (English)</option>
-                    <option value="ja">일본어 (Japanese)</option>
-                    <option value="zh">중국어 (Chinese)</option>
-                    <option value="es">스페인어 (Spanish)</option>
-                    <option value="fr">프랑스어 (French)</option>
-                    <option value="de">독일어 (German)</option>
-                    <option value="ru">러시아어 (Russian)</option>
-                    <option value="ar">아랍어 (Arabic)</option>
-                  </select>
+                  <div className="control-group">
+                    <label htmlFor="translation-method">번역 서비스 (Translation Service):</label>
+                    <select
+                      id="translation-method"
+                      value={translationMethod}
+                      onChange={(e) => setTranslationMethod(e.target.value)}
+                      className="method-select"
+                    >
+                      <option value="mymemory">MyMemory (무료, 500자 제한)</option>
+                      <option value="google">Google Translate (API 키 필요)</option>
+                    </select>
+                  </div>
+                  
+                  <div className="control-group">
+                    <label htmlFor="language-select">번역 언어 (Target Language):</label>
+                    <select
+                      id="language-select"
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value)}
+                      className="language-select"
+                    >
+                      <option value="ko">한국어 (Korean)</option>
+                      <option value="en">영어 (English)</option>
+                      <option value="ja">일본어 (Japanese)</option>
+                      <option value="zh">중국어 (Chinese)</option>
+                      <option value="es">스페인어 (Spanish)</option>
+                      <option value="fr">프랑스어 (French)</option>
+                      <option value="de">독일어 (German)</option>
+                      <option value="ru">러시아어 (Russian)</option>
+                      <option value="ar">아랍어 (Arabic)</option>
+                    </select>
+                  </div>
+                  
                   <button
                     onClick={() => translateText(contentModal.text, selectedLanguage)}
                     disabled={isTranslating}
