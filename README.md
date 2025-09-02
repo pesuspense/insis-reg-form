@@ -204,14 +204,17 @@ GET /api/registrations?sortBy=createdAt&sortOrder=desc
    - 프로덕션 환경: Vercel 대시보드에서 환경변수 추가
 
 3. **번역 서비스 선택**
-   - ChatGPT-5: 청년정책 전문가 모델, 최고품질, API 키 필요, 기본값 (오류 시 MyMemory로 자동 전환)
+   - ChatGPT-5: IPYG 청년정책 전문가 모델, 최고품질, API 키 필요, 기본값 (오류 시 MyMemory로 자동 전환)
    - MyMemory: 무료, 500자 제한 (fallback 옵션)
 
-4. **ChatGPT-5 전문가 모델 특징**
-   - 청년정책 전문가 컨셉 적용
+4. **ChatGPT-5 IPYG 전문가 모델 특징**
+   - IPYG(International Peace Youth Group) 전문가 컨셉 적용
+   - 국제평화청년단체의 목표와 가치 이해
+   - 청년정책 전문가로서 생명코치, 컨설턴트, 어드바이저, 멘토 역할
    - 국제정세, 정치, 사회, 문화, 역사, 종교 분야 전문성
    - 유럽 중심의 청년정책 맥락 이해
    - 미래 사회 변화 예측 능력
+   - 평화와 청년 세대 안정성 구축에 대한 전문 지식
 
 ## 라이선스
 
