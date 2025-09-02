@@ -24,7 +24,6 @@ const AdminPage = () => {
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('ko');
-  const [translationMethod, setTranslationMethod] = useState('mymemory'); // 'mymemory' or 'google'
 
   const countries = [
     { code: '', name: '전체' },
@@ -272,57 +271,18 @@ const AdminPage = () => {
     return chunks;
   };
 
-  // Google Translate API를 사용한 번역 함수
-  const translateWithGoogle = async (text, sourceLang, targetLang) => {
-    // Google Translate API는 API 키가 필요하므로 여기서는 예시만 제공
-    // 실제 사용시에는 환경변수나 설정에서 API 키를 가져와야 합니다
-    const API_KEY = process.env.REACT_APP_GOOGLE_TRANSLATE_API_KEY;
-    
-    if (!API_KEY) {
-      throw new Error('Google Translate API 키가 설정되지 않았습니다. MyMemory API를 사용합니다.');
-    }
-    
+  // 단일 청크 번역 함수 (MyMemory API 사용)
+  const translateChunk = async (chunk, sourceLang, targetLang) => {
     const response = await fetch(
-      `https://translation.googleapis.com/language/translate/v2?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          q: text,
-          source: sourceLang,
-          target: targetLang,
-          format: 'text'
-        })
-      }
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`
     );
     
     const data = await response.json();
     
-    if (data.data && data.data.translations && data.data.translations[0]) {
-      return data.data.translations[0].translatedText;
+    if (data.responseStatus === 200 && data.responseData) {
+      return data.responseData.translatedText;
     } else {
-      throw new Error(`Google 번역 실패: ${data.error?.message || '알 수 없는 오류'}`);
-    }
-  };
-
-  // 단일 청크 번역 함수
-  const translateChunk = async (chunk, sourceLang, targetLang, method = 'mymemory') => {
-    if (method === 'google') {
-      return await translateWithGoogle(chunk, sourceLang, targetLang);
-    } else {
-      const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`
-      );
-      
-      const data = await response.json();
-      
-      if (data.responseStatus === 200 && data.responseData) {
-        return data.responseData.translatedText;
-      } else {
-        throw new Error(`청크 번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
-      }
+      throw new Error(`청크 번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
     }
   };
 
@@ -359,7 +319,7 @@ const AdminPage = () => {
           console.log(`청크 ${i + 1}/${chunks.length} 번역 중... (${chunk.length}자)`);
           
           try {
-            const translatedChunk = await translateChunk(chunk, sourceLang, targetLang, translationMethod);
+            const translatedChunk = await translateChunk(chunk, sourceLang, targetLang);
             translatedChunks.push(translatedChunk);
             
             // 진행률 표시
@@ -383,25 +343,19 @@ const AdminPage = () => {
         setMessage({ type: 'success', text: `번역이 완료되었습니다. (${chunks.length}개 청크 처리)` });
         
       } else {
-        // 짧은 텍스트는 선택된 방법으로 번역
-        if (translationMethod === 'google') {
-          const translatedText = await translateWithGoogle(text, sourceLang, targetLang);
-          setTranslatedText(translatedText);
-          setMessage({ type: 'success', text: '번역이 완료되었습니다. (Google Translate)' });
+        // 짧은 텍스트는 MyMemory API로 번역
+        const response = await fetch(
+          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
+        );
+        
+        const data = await response.json();
+        console.log('번역 API 응답:', data);
+        
+        if (data.responseStatus === 200 && data.responseData) {
+          setTranslatedText(data.responseData.translatedText);
+          setMessage({ type: 'success', text: '번역이 완료되었습니다.' });
         } else {
-          const response = await fetch(
-            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
-          );
-          
-          const data = await response.json();
-          console.log('번역 API 응답:', data);
-          
-          if (data.responseStatus === 200 && data.responseData) {
-            setTranslatedText(data.responseData.translatedText);
-            setMessage({ type: 'success', text: '번역이 완료되었습니다. (MyMemory)' });
-          } else {
-            throw new Error(`번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
-          }
+          throw new Error(`번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
         }
       }
       
@@ -856,19 +810,6 @@ const AdminPage = () => {
                 </div>
                 <div className="translation-controls">
                   <div className="control-group">
-                    <label htmlFor="translation-method">번역 서비스 (Translation Service):</label>
-                    <select
-                      id="translation-method"
-                      value={translationMethod}
-                      onChange={(e) => setTranslationMethod(e.target.value)}
-                      className="method-select"
-                    >
-                      <option value="mymemory">MyMemory (무료, 500자 제한)</option>
-                      <option value="google">Google Translate (API 키 필요)</option>
-                    </select>
-                  </div>
-                  
-                  <div className="control-group">
                     <label htmlFor="language-select">번역 언어 (Target Language):</label>
                     <select
                       id="language-select"
@@ -893,7 +834,7 @@ const AdminPage = () => {
                     disabled={isTranslating}
                     className="btn btn-primary translate-btn"
                   >
-                    {isTranslating ? '번역 중...' : '🌐 번역하기'}
+                    {isTranslating ? '번역 중...' : '🌐 번역하기 (MyMemory)'}
                   </button>
                 </div>
                 
