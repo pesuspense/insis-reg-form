@@ -324,26 +324,44 @@ const AdminPage = () => {
     if (data.choices && data.choices[0] && data.choices[0].message) {
       return data.choices[0].message.content.trim();
     } else {
-      throw new Error(`ChatGPT 번역 실패: ${data.error?.message || '알 수 없는 오류'}`);
+      const errorMessage = data.error?.message || '알 수 없는 오류';
+      
+      // 할당량 초과 에러인 경우 MyMemory로 fallback 안내
+      if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
+        throw new Error(`ChatGPT 할당량 초과: ${errorMessage}. MyMemory API를 사용하거나 OpenAI 계정에 결제 정보를 등록해주세요.`);
+      }
+      
+      throw new Error(`ChatGPT 번역 실패: ${errorMessage}`);
     }
   };
 
-  // 단일 청크 번역 함수
+  // MyMemory API를 사용한 번역 함수
+  const translateWithMyMemory = async (chunk, sourceLang, targetLang) => {
+    const response = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`
+    );
+    
+    const data = await response.json();
+    
+    if (data.responseStatus === 200 && data.responseData) {
+      return data.responseData.translatedText;
+    } else {
+      throw new Error(`MyMemory 번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+    }
+  };
+
+  // 단일 청크 번역 함수 (ChatGPT 실패 시 MyMemory로 fallback)
   const translateChunk = async (chunk, sourceLang, targetLang, method = 'mymemory') => {
     if (method === 'chatgpt') {
-      return await translateWithChatGPT(chunk, sourceLang, targetLang);
-    } else {
-      const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`
-      );
-      
-      const data = await response.json();
-      
-      if (data.responseStatus === 200 && data.responseData) {
-        return data.responseData.translatedText;
-      } else {
-        throw new Error(`청크 번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+      try {
+        return await translateWithChatGPT(chunk, sourceLang, targetLang);
+      } catch (error) {
+        console.warn('ChatGPT 번역 실패, MyMemory로 fallback:', error.message);
+        // ChatGPT 실패 시 MyMemory로 자동 fallback
+        return await translateWithMyMemory(chunk, sourceLang, targetLang);
       }
+    } else {
+      return await translateWithMyMemory(chunk, sourceLang, targetLang);
     }
   };
 
@@ -407,23 +425,21 @@ const AdminPage = () => {
       } else {
         // 짧은 텍스트는 선택된 방법으로 번역
         if (translationMethod === 'chatgpt') {
-          const translatedText = await translateWithChatGPT(text, sourceLang, targetLang);
-          setTranslatedText(translatedText);
-          setMessage({ type: 'success', text: '번역이 완료되었습니다. (ChatGPT)' });
-        } else {
-          const response = await fetch(
-            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
-          );
-          
-          const data = await response.json();
-          console.log('번역 API 응답:', data);
-          
-          if (data.responseStatus === 200 && data.responseData) {
-            setTranslatedText(data.responseData.translatedText);
-            setMessage({ type: 'success', text: '번역이 완료되었습니다. (MyMemory)' });
-          } else {
-            throw new Error(`번역 실패: ${data.responseDetails || '알 수 없는 오류'}`);
+          try {
+            const translatedText = await translateWithChatGPT(text, sourceLang, targetLang);
+            setTranslatedText(translatedText);
+            setMessage({ type: 'success', text: '번역이 완료되었습니다. (ChatGPT)' });
+          } catch (error) {
+            console.warn('ChatGPT 번역 실패, MyMemory로 fallback:', error.message);
+            // ChatGPT 실패 시 MyMemory로 자동 fallback
+            const translatedText = await translateWithMyMemory(text, sourceLang, targetLang);
+            setTranslatedText(translatedText);
+            setMessage({ type: 'success', text: '번역이 완료되었습니다. (ChatGPT 실패 → MyMemory 사용)' });
           }
+        } else {
+          const translatedText = await translateWithMyMemory(text, sourceLang, targetLang);
+          setTranslatedText(translatedText);
+          setMessage({ type: 'success', text: '번역이 완료되었습니다. (MyMemory)' });
         }
       }
       
@@ -886,8 +902,13 @@ const AdminPage = () => {
                       className="method-select"
                     >
                       <option value="mymemory">MyMemory (무료, 500자 제한)</option>
-                      <option value="chatgpt">ChatGPT (고품질, API 키 필요)</option>
+                      <option value="chatgpt">ChatGPT (고품질, API 키 + 결제 필요)</option>
                     </select>
+                    {translationMethod === 'chatgpt' && (
+                      <div className="api-warning">
+                        ⚠️ ChatGPT API는 결제 정보 등록이 필요합니다. 할당량 초과 시 자동으로 MyMemory로 전환됩니다.
+                      </div>
+                    )}
                   </div>
                   
                   <div className="control-group">
