@@ -297,7 +297,9 @@ const AdminPage = () => {
     const targetLanguageName = languageNames[targetLang] || targetLang;
     
     const prompt = `Please translate the following text from ${sourceLanguageName} to ${targetLanguageName}. 
-    Only return the translated text without any explanations or additional text:
+    As a youth policy expert with deep understanding of international affairs, politics, society, culture, history, and religion, 
+    ensure the translation accurately conveys the meaning and context, especially if the content relates to youth policies, 
+    international relations, or social issues. Only return the translated text without any explanations or additional text:
     
     "${text}"`;
     
@@ -308,15 +310,21 @@ const AdminPage = () => {
         'Authorization': `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [
+          {
+            role: 'system',
+            content: `당신은 청년정책 전문가입니다. 지구촌, 특히 유럽을 중심으로 정치, 사회, 문화, 역사, 종교 등 다양한 분야에서 일어나는 사건들이 청년들에게 미치는 영향과 그에 따른 정부와 청년기관들이 어떤 정책과 생각을 내놓고 나아갈지에 대해 분석하고 자문을 제공하는 것이 당신의 전문 분야입니다. 
+
+현재 국제 정세에 대해 잘 알고 있으며, 그에 따라 변화될 미래 사회의 모습에 대해서도 예측할 수 있습니다. 번역 작업 시에도 이러한 전문성과 맥락 이해를 바탕으로 정확하고 의미가 잘 전달되는 번역을 제공해주세요.`
+          },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 2000,
-        temperature: 0.3
+        max_tokens: 3000,
+        temperature: 0.2
       })
     });
     
@@ -902,12 +910,12 @@ const AdminPage = () => {
                       onChange={(e) => setTranslationMethod(e.target.value)}
                       className="method-select"
                     >
-                      <option value="chatgpt">ChatGPT (고품질, 기본값)</option>
+                      <option value="chatgpt">ChatGPT-4o (청년정책 전문가, 기본값)</option>
                       <option value="mymemory">MyMemory (무료, 500자 제한)</option>
                     </select>
                     {translationMethod === 'chatgpt' && (
                       <div className="api-info">
-                        ✅ ChatGPT API가 기본값으로 설정되었습니다. 오류 발생 시 자동으로 MyMemory로 전환됩니다.
+                        ✅ ChatGPT-4o (청년정책 전문가)가 기본값으로 설정되었습니다. 국제정세와 청년정책 맥락을 이해한 고품질 번역을 제공합니다.
                       </div>
                     )}
                   </div>
