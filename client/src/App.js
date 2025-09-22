@@ -23,13 +23,13 @@ function App() {
               className={`nav-btn ${currentPage === 'form' ? 'active' : ''}`}
               onClick={() => setCurrentPage('form')}
             >
-              등록 폼 (Register)
+              등록 (Register)
             </button>
             <button 
               className={`nav-btn ${currentPage === 'admin' ? 'active' : ''}`}
               onClick={() => setCurrentPage('admin')}
             >
-              관리 페이지 (History)
+              연락내역관리 (History)
             </button>
           </div>
         </div>
