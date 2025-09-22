@@ -715,11 +715,8 @@ IPYG는 전 세계 청년들을 평화라는 목적으로 하나로 모아 청�
 
         <div className="action-buttons">
           <button onClick={loadRegistrations} className="refresh-btn">
-            <span role="img" aria-label="새로고침" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" style={{ verticalAlign: 'middle' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <path d="M1 20a11 11 0 0 1 11-11c2.39 0 4.6.78 6.39 2.11"></path>
-              </svg>
+            <span role="img" aria-label="새로고침" style={{ marginRight: '6px', verticalAlign: 'middle', fontSize: '18px' }}>
+              &#x21bb;
             </span>
             Refresh
           </button>
