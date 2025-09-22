@@ -19,9 +19,17 @@ const pool = new Pool({
 });
 
 // 데이터베이스 연결 테스트
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL 환경 변수가 설정되지 않았습니다.');
+  console.error('서버를 시작하려면 DATABASE_URL을 설정해주세요.');
+  console.error('예: postgresql://localhost:5432/insis-reg-form');
+  process.exit(1);
+}
+
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
     console.error('PostgreSQL 연결 오류:', err.message);
+    console.error('데이터베이스 서버가 실행 중인지 확인해주세요.');
   } else {
     console.log('PostgreSQL에 연결되었습니다.');
   }
